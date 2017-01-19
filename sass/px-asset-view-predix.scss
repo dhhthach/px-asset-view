@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2014 GE Global Research. All rights reserved.
+ *
+ * The copyright to the computer software herein is the property of
+ * GE Global Research. The software may be used and/or copied only
+ * with the written permission of GE Global Research or in accordance
+ * with the terms and conditions stipulated in the agreement/contract
+ * under which the software has been supplied.
+ */
+
+//
+// Sass for the Predix notion of the px-dendrogram component
+//
+// @author
+//
+
+/*
+THIS FILE SHOULD CONTAIN ONLY RULES SPECIFIC TO PREDIX BRANDING
+common/abstract rules go in px-dendrogram-sketch.scss, not in this file.
+*/
+
+// Settings
+@import "px-colors-design/_settings.colors.scss";
+
+@import 'px-asset-view-sketch.scss';
+
+// Tools
+
+// Generic
+
+// Base
+
+// Meta
+
+// Objects
+
+// Component
+
+#container {
+  position: relative;
+
+  #loading {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(white, 0.9);
+
+    px-spinner {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%,-50%);
+    }
+  }
+}
+
+.node {
+  text{
+    font-size: 1.1rem;
+  }
+  circle {
+    fill: white;
+    stroke: $primary-blue;
+    stroke-width: 2px;
+  }
+  .node-icon{
+    fill: $primary-blue;
+  }
+}
+
+.node-visited {
+  circle{
+    fill: $gray6;
+    stroke: $gray6;
+  }
+  .node-icon {
+    fill: white;
+  }
+}
+
+.node-selected {
+  circle {
+    fill: $primary-blue;
+    stroke: $primary-blue;
+  }
+  .node-icon {
+    fill: white;
+  }
+}
+
+.node-text .node-counter{
+  padding-right: 5px;
+  fill: $gray4;
+}
+
+.link {
+  fill: none;
+  stroke: $gray4;
+  stroke-width: 2px;
+}
+
+.pager {
+  .showing-part {
+    font-weight: bold;
+    fill: $gray9;
+  }
+  .total-part {
+    fill: $gray9;
+  }
+  .icon-disabled {
+    fill: $gray4;
+  }
+  .icon {
+    cursor: pointer;
+    fill: $gray8;
+  }
+}
+
+// Trumps
+

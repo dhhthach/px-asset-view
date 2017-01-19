@@ -1,0 +1,839 @@
+<!--
+    Relative paths assume component is being run from inside an app or another component, where dependencies are flat
+    siblings. When this component is run from its own repo (e.g. tests, examples), we assume the server is started with
+    'gulp serve' (or similar server setup) to enable correct finding of bower dependencies for local runs.
+-->
+<link rel="import" href="../polymer/polymer.html" />
+<link rel="import" href="../px-spinner/px-spinner.html"/>
+<link rel="import" href="../px-vis/px-vis-d3.html"/>
+<link rel="import" href="node-viewer.html"/>
+
+<link rel="import" href="css/px-asset-view-styles.html">
+
+
+<!--
+Dendrogram element. See the demo page (demo.html) for a working example.
+
+#### Usage
+Minimum:
+
+    <px-asset-view></px-asset-view>
+
+Advanced:
+
+    <px-asset-view items-per-level='10'
+                   data-source='{"name": "Home", "icon": "f015", "total": 10}'>
+    </px-asset-view>
+
+### Code on your page
+
+Define how your data will come in using these methods:
+
+    window.addEventListener('WebComponentsReady', function() {
+        var dendrogramDOM = document.querySelector('px-asset-view');
+        dendrogramDOM.addEventListener('px-asset-view-children-request', function(e) {
+            dendrogramDOM.appendChildren(e.detail.parent, childrenData);
+        });
+    });
+
+
+@element px-dendrogram
+@blurb Context browser element
+@homepage index.html
+@demo index.html
+-->
+
+<dom-module id="px-asset-view">
+
+  <link rel="stylesheet" href="bower_components/font-awesome/css/font-awesome.min.css">
+
+  <template>
+    <style include="px-asset-view-styles"></style>
+    <div id="container">
+      <div id="graph">
+        <svg width$="[[_computeSVGWidth(_width, _margin.right, _margin.left)]]"
+             height$="[[_computeSVGHeight(_height, _margin.top, _margin.bottom)]]">
+          <g transform$="[[_computeTransform(_margin)]]"></g>
+        </svg>
+      </div>
+    </div>
+  </template>
+</dom-module>
+
+<script>
+
+  Polymer({
+
+    is: 'px-asset-view',
+
+    properties: {
+      /**
+       * Specify the data source of asset-view. The structure data which is displayed on asset-view need to be conform
+       * the defined format as below:
+       * - There is label field to display name on UI (configurable via labelField property)
+       * - There is id field to identify nodes (configurable via idField property)
+       * - There is icon field to display icon on UI if need (configurable via iconField property)
+       * - There is total item field to display number of items (configurable via totalField property)
+       * @type {Object}
+       */
+      dataSource: {
+        type: Object,
+        value: function() {
+          return {
+            name: 'Home',
+            icon: 'f015',
+            total: 10
+          };
+        }
+      },
+      /**
+       * Flag to show that dynamic loading is used or not
+       * @type {Boolean}
+       */
+      useStaticData: {
+        type: Boolean,
+        value: false
+      },
+      /**
+       * Specify the nodes per level
+       * @type {Number}
+       */
+      itemsPerLevel: {
+        type: Number,
+        value: 10
+      },
+      /**
+       * Mapping for the field name in the data that represents the display label for a node.
+       *
+       * @type {String}
+       * @default "name"
+       */
+      labelField: {
+        type: String,
+        value: 'name'
+      },
+      /**
+       * Mapping for the field name in the data that represents a unique id for a node
+       * @type {String}
+       *
+       * @default "id"
+       */
+      idField: {
+        type: String,
+        value: 'id'
+      },
+      /**
+       * Mapping for the field name in the data that represents the icon for a node.
+       *
+       * @type {String}
+       * @default "icon"
+       */
+      iconField: {
+        type: String,
+        value: 'icon'
+      },
+      /**
+       * Mapping for the field name in the data that represents a total items for a node
+       * @type {String}
+       *
+       * @default "total"
+       */
+      totalField: {
+        type: String,
+        value: 'total'
+      },
+      /**
+       * Distance between two nodes horizontally
+       * @type {Number}
+       * @default 200
+       */
+      _horizontalGap: {
+        type: Number,
+        value: 200
+      },
+      /**
+       * Margins
+       * @type {Object}
+       * @default {top: 20, right: 90, bottom: 30, left: 90}
+       */
+      _margin: {
+        type: Object,
+        value: function() {
+          return {top: 20, right: 90, bottom: 30, left: 90};
+        }
+      },
+      /**
+       * SVG instance
+       * @type {Object}
+       */
+      _svg: {
+        type: Object,
+        value: function() {
+          return d3.select(this.$.graph).select('svg').select('g');
+        }
+      },
+      /**
+       * Duration for the animation
+       * @type {Number}
+       * @default 500
+       */
+      _duration: {
+        type: Number,
+        value: 500
+      },
+      /**
+       * D3 Tree object
+       * @type {Object}
+       */
+      _D3Tree: {
+        type: Object,
+        computed: '_computeD3Tree(_width, _height)'
+      },
+      /**
+       * Real height of chart (Exclude margins)
+       * @type {Number}
+       */
+      _height: {
+        type: Number,
+        value: 200
+      },
+      /**
+       * Real width of chart (Exclude margins)
+       * @type {Number}
+       */
+      _width: {
+        type: Number,
+        value: 200
+      },
+      /**
+       * D3 Hierarchy/Tree data
+       * @type {Number}
+       */
+      _hierarchyData: {
+        type: Object
+      },
+      /**
+       * Type of on click event
+       * @type {Object}
+       */
+      _REQUEST_CHILDREN_TYPE: {
+        type: Object,
+        value: function() {
+          return { INIT: 0, NEXT: 1, PREV: -1 }
+        }
+      },
+      _autoGenId: {
+        type: Number,
+        value: 1
+      }
+    },
+
+    /**
+     * This method will accept array as children and append to parent node.
+     * @param {Object} node
+     * @param {Array} children Conform format of data for node
+     */
+    appendChildren: function(node, children) {
+        this._updateHierarchy(node, children.slice(0, this.itemsPerLevel));
+        this._updateTree(node);
+    },
+
+    /**
+     * Fires whenever children of node is requested
+     * @event px-dendogram-children-request
+     * @param {Object} parent parent node
+     * @param {Boolean} isGetNext flag to show get next children or previous children
+     */
+    /**
+     * Handle click event on nodes or pagers (prev, next)
+     * @param {Object} node specific node
+     * @param {Object} nodeDOM  DOM of node
+     * @param {Number} requestType INIT, PREV, or NEXT
+     * @private
+     */
+    _handleClick: function(node, nodeDOM, requestType) {
+
+      if (requestType === this._REQUEST_CHILDREN_TYPE.INIT) { // Click on node
+        if (node.children || node._children) {
+          this._updateHierarchy(node, null);
+          this._updateTree(node);
+        } else if (node.data[this.totalField] === 0) {
+          this._updateSelectedNodeDOM(nodeDOM);
+        } else {
+          if (!this.useStaticData) {
+            node.currentPage++;
+            this.fire('px-asset-view-children-request', { parent: node , isGetNext: true});
+          }
+        }
+      } else { // Click on pager
+        if (requestType === this._REQUEST_CHILDREN_TYPE.NEXT) {
+          if (this._isLastPage(node.currentPage, node.data[this.totalField])) return;
+        } else {
+          if (this._isFirstPage(node.currentPage)) return;
+        }
+        node.currentPage += requestType;
+        this.fire('px-asset-view-children-request', { parent: node , isGetNext: requestType > 0});
+      }
+    },
+
+    /**
+     * Update Tree from specific node
+     * @param {Object} source
+     * @private
+     */
+    _updateTree: function (source) {
+
+      this._getIdealHeight(this._hierarchyData);
+
+      var treeData = this._D3Tree(this._hierarchyData);
+
+      // Assigns the x and y position for the nodes
+      var nodes = treeData.descendants(),
+              links = treeData.descendants().slice(1);
+
+      //distance between two level
+      var calculatedWidth = 0;
+      nodes.forEach((function(d){
+        d.y = d.depth * this._horizontalGap;
+        calculatedWidth = calculatedWidth > d.y + this._horizontalGap ? calculatedWidth : d.y + this._horizontalGap;
+      }).bind(this));
+
+      // NODES
+
+      var nodesData = this._svg.selectAll('g.node')
+              .data(nodes, (function(d) {return d.data[this.idField] || (d.data[this.idField] = ++ this._autoGenId);}).bind(this));
+
+      this._renderNodes(nodesData, source);
+
+      // LINKS
+
+      var link = this._svg.selectAll('path.link')
+              .data(links, (function(d) { return d.data[this.idField]; }).bind(this));
+
+      this._renderLinks(link, source);
+
+      // PAGERS: Is Rendered only for dynamical data (useStaticData: false)
+      if (!this.useStaticData) {
+        var pagersData = this._svg.selectAll('g.pager')
+                .data(this._findExpandingNodes(), (function (d) {
+                  return d.data[this.idField];
+                }).bind(this));
+
+        this._renderPagers(pagersData);
+      }
+
+      // Store the old positions for transition.
+      nodes.forEach(function(d){
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+
+      this.set('_width', calculatedWidth);
+
+    },
+
+    /**
+     * Draw the Bézier curve to connect parent and child node
+     * @param {Object} s parent
+     * @param {Object} d child
+     * @return {String} path
+     * @private
+     */
+    _diagonal: function(s, d) {
+      return ['M', s.y, s.x, 'C', (s.y + d.y ) / 2, s.x, (s.y + d.y ) / 2, d.x, d.y, d.x].join(' ');
+    },
+
+    /**
+     * Toggle specific node
+     * @param {Object} node
+     * @private
+     */
+    _toggle: function (node) {
+
+      if (Object.keys(node).length === 0) return;
+
+      if (node.children) {
+        node._children = node.children;
+        node.children = null;
+      } else {
+        node.children = node._children;
+        node._children = null;
+      }
+
+    },
+
+    /**
+     * Collapse all the nodes
+     * @param {Object} node
+     * @private
+     */
+    _collapse: function (node) {
+      if (node.children) {
+        node._children = node.children;
+        node._children.forEach(this._collapse.bind(this));
+        node.children = null;
+      }
+    },
+
+    /**
+     * Highlight selected node (leaf node)
+     * @param {Object} selectedNodeDOM
+     * @private
+     */
+    _updateSelectedNodeDOM: function (selectedNodeDOM) {
+      d3.select('.node-selected').classed('node-selected', false);
+      d3.select(selectedNodeDOM.parentElement).classed('node-selected', true);
+    },
+
+    /**
+     * Update Hierarchy structure when children nodes are coming. We need to do this for D3.tree() method.
+     * Besides, recalculating height and width of tree is also applied
+     * @param {Object} node
+     * @param {Object} childrenData
+     * @private
+     */
+    _updateHierarchy: function (node, childrenData){
+
+      //add new nodes
+      if (childrenData){
+        node.children = [];
+        childrenData.forEach(function(data){
+          var newNode = d3.hierarchy(data, function(d) { return d.children; });
+          newNode.parent = node;
+          newNode.depth = node.depth + 1;
+          newNode.currentPage = 0;
+          node.children.push(newNode)
+        });
+      } else {
+        this._toggle(node);
+      }
+
+    },
+
+    /**
+     * Because the coordinates of nodes are generated base on width and height of Tree layout. If we expanding nodes
+     * but keep the same height, overlapping between node can happen. Therefore, we need work around to adjust height
+     * of Tree layout to decrease overlapping chance.
+     * @param {Object} hierarchyData
+     * @private
+     */
+    _getIdealHeight: function(hierarchyData) {
+
+      // normalize coordinate of node using nodeSize() instead of size()
+      d3.tree().nodeSize([50, 50])(hierarchyData);
+
+      var lowestX = 0, highestX = 0, children = [hierarchyData];
+
+      while (children.length > 0){
+
+        var currentNode = children.shift();
+
+        lowestX = lowestX < currentNode.x ? lowestX : currentNode.x;
+        highestX = highestX > currentNode.x ? highestX : currentNode.x;
+
+        if (currentNode.children) {
+          children = children.concat(currentNode.children);
+        }
+
+      }
+
+      this.set('_height', highestX - lowestX);
+
+    },
+
+    /**
+     * Draw/Update Nodes on UI
+     * @param {Object} link
+     * @param {Object} source
+     * @private
+     */
+    _renderNodes: function(nodesData, source) {
+
+      var nodesEnter = nodesData.enter().append('g')
+              .attr('class', (function(d) {
+                return d.children ? this._generateClass('node node-visited') : this._generateClass('node');
+              }).bind(this))
+              .attr('transform', function() {
+                return 'translate(' + source.y0 + ',' + source.x0 + ')';
+              });
+
+      // Add Circle for the nodes
+      var circleGroup = nodesEnter.append('g')
+              .style('cursor', 'pointer')
+              .on('click', (function(d) {
+                this._handleClick.call(this, d, d3.event.target.parentElement, this._REQUEST_CHILDREN_TYPE.INIT);
+              }).bind(this));
+
+      circleGroup.append('circle')
+              .attr('r', 1e-6)
+              .attr('class', 'node')
+              .classed(this.is, true);
+
+      circleGroup.append('text')
+              .attr('dy', '.35em')
+              .attr('text-anchor', 'middle')
+              .style('font-family', 'FontAwesome')
+              .attr('class', 'node-icon').classed(this.is, true)
+              .text(function(d) {
+                var charCode = parseInt(d.data.icon, 16);
+                return String.fromCharCode(charCode);
+              });
+
+      // Add labels for the nodes
+      var labelGroup = nodesEnter.append('text')
+              .attr('dy', '.35em')
+              .attr('x', function(d) {
+                return d.parent ? 25 : -25;
+              })
+              .attr('text-anchor', function(d) {
+                return d.parent ? 'start' : 'end';
+              })
+              .attr('class', 'node-text').classed(this.is, true);
+
+      // adding tooltip
+      labelGroup.append('title').text((function(d){
+                return d.data[this.labelField] + ' (' + d.data[this.totalField] + ')'; }
+      ).bind(this));
+
+      labelGroup.append('tspan')
+              .attr('class', 'node-label').classed(this.is, true)
+              .attr('dx', '5')
+              .text((function(d){
+                var label = d.data[this.labelField] + d.data[this.totalField];
+                if ( label.length > 20 ) {
+                  return d.data[this.labelField].slice(0, 17 - d.data[this.totalField].toString().length) + '...';
+                } else {
+                  return d.data[this.labelField];
+                }
+              }).bind(this));
+
+      labelGroup.append('tspan')
+              .attr('class', 'node-counter').classed(this.is, true)
+              .attr('dx', '5')
+              .text((function(d){
+                return d.parent ? '(' + d.data[this.totalField] + ')' : '';
+              }).bind(this));
+
+      labelGroup.append('tspan')
+              .attr('dx', '5')
+              .style('font-family', 'FontAwesome')
+              .text(function(d) {
+                var charCode = parseInt('f040', 16);
+                return String.fromCharCode(charCode);
+              })
+              .on('click', (function(d) {
+                this._openNodeProps.call(this, d);
+              }).bind(this));
+
+      labelGroup.append('tspan')
+              .attr('dx', '5')
+              .style('font-family', 'FontAwesome')
+              .text(function(d) {
+                var charCode = parseInt('f00d', 16);
+                return String.fromCharCode(charCode);
+              })
+              .on('click', (function(d) {
+                this._openNodeProps.call(this, d);
+              }).bind(this));
+
+      // UPDATE
+      var nodesUpdate = nodesEnter.merge(nodesData);
+
+      nodesUpdate.transition()
+              .duration(this._duration)
+              .attr('transform', function(d) {
+                return 'translate(' + d.y + ',' + d.x + ')';
+              })
+              .attr('class', (function(d) {
+                return d.children ? this._generateClass('node node-visited') : this._generateClass('node');
+              }).bind(this));
+
+      nodesUpdate.select('circle.node')
+              .attr('r', 15);
+
+      nodesUpdate.select('title')
+              .text((function(d){
+                        return d.data[this.labelField] + ' (' + d.data[this.totalField] + ')'; }
+              ).bind(this));
+
+      nodesUpdate.select('.node-label')
+              .text((function(d){
+                var label = d.data[this.labelField] + d.data[this.totalField];
+                if ( label.length > 20 ) {
+                  return d.data[this.labelField].slice(0, 15 - d.data[this.totalField].toString().length) + '...';
+                } else {
+                  return d.data[this.labelField];
+                }
+              }).bind(this));
+
+      nodesData.exit().transition()
+              .duration(this._duration)
+              .attr('transform', function(d) {
+                return 'translate(' + source.y + ',' + source.x + ')';
+              })
+              .remove();
+
+    },
+
+    /**
+     * Draw/Update Links (Curves) from specific node
+     * @param {Object} link
+     * @param {Object} source
+     * @private
+     */
+    _renderLinks: function(linksData, source) {
+
+      var linksEnter = linksData.enter().insert('path', 'g')
+              .attr('class', 'link').classed(this.is, true)
+              .attr('d', (function() {
+                var o = {x: source.x0, y: source.y0};
+                return this._diagonal(o, o)
+              }).bind(this));
+
+      var linksUpdate = linksEnter.merge(linksData);
+
+      linksUpdate.transition()
+              .duration(this._duration)
+              .attr('d', (function(d){ return this._diagonal(d, d.parent) }).bind(this));
+
+      linksData.exit().transition()
+              .duration(this._duration)
+              .attr('d', (function() {
+                var o = {x: source.x, y: source.y};
+                return this._diagonal(o, o)
+              }).bind(this))
+              .remove();
+    },
+
+    /**
+     * Draw/Update Pagers on UI
+     * @param {Object} pagination
+     * @private
+     */
+    _renderPagers: function(pagersData) {
+
+      var pagersEnter = pagersData.enter().insert('g', 'g')
+              .attr('class', 'pager').classed(this.is, true)
+              .attr('transform', function (d) {
+                var pos = {
+                  x: d.children[d.children.length - 1].x + 40,
+                  y: d.children[d.children.length - 1].y
+                };
+                return 'translate(' + pos.y + ',' + pos.x + ')';
+              });
+
+      var pager = pagersEnter.append('text');
+
+      // <
+      pager.append('tspan')
+              .attr('class', (function(d) {
+                return this._isFirstPage(d.currentPage) ?
+                        this._generateClass('icon-left icon-disabled') : this._generateClass('icon icon-left')
+              }).bind(this))
+              .style('font-family', 'FontAwesome')
+              .text(function() {
+                var charCode = parseInt('f053', 16);
+                return String.fromCharCode(charCode);
+              })
+              .on('click', (function(d) {
+                this._handleClick.call(this, d, d3.event.target.parentElement, this._REQUEST_CHILDREN_TYPE.PREV);
+              }).bind(this));
+
+      // from - to
+      pager.append('tspan')
+              .attr('dx', '5')
+              .attr('class', 'showing-part').classed(this.is, true)
+              .text((function(d) {
+                var from = (d.currentPage - 1) * this.itemsPerLevel + 1;
+                var to = from + d.children.length - 1;
+                return from + ' - ' + to;
+              }).bind(this));
+
+      // of Total
+      pager.append('tspan')
+              .attr('dx', '5')
+              .attr('class', 'total-part').classed(this.is, true)
+              .text((function(d) {
+                return 'of ' + d.data[this.totalField];
+              }).bind(this));
+
+      // >
+      pager.append('tspan')
+              .attr('dx', '5')
+              .attr('class', (function(d) {
+                return this._isFirstPage(d.currentPage) ?
+                        this._generateClass('icon-right icon-disabled') : this._generateClass('icon icon-right');
+              }).bind(this)).classed(this.is, true)
+              .style('font-family', 'FontAwesome')
+              .text(function() {
+                var charCode = parseInt('f054', 16);
+                return String.fromCharCode(charCode);
+              })
+              .on('click', (function(d) {
+                this._handleClick.call(this, d, d3.event.target.parentElement, this._REQUEST_CHILDREN_TYPE.NEXT);
+              }).bind(this));
+
+      var pagersUpdate = pagersEnter.merge(pagersData);
+
+      pagersUpdate.attr('transform', function(d) {
+        var pos = {
+          x: d.children[d.children.length - 1].x + 40,
+          y: d.children[d.children.length - 1].y
+        };
+        return 'translate(' + pos.y + ',' + pos.x  + ')';
+      });
+
+      pagersUpdate.select('tspan.showing-part')
+              .text((function(d) {
+                var from = (d.currentPage - 1) * this.itemsPerLevel + 1;
+                var to = from + d.children.length - 1;
+                return from + ' - ' + to;
+              }).bind(this));
+
+      pagersUpdate.select('tspan.icon-right')
+              .attr('class', (function(d) {
+                return this._isLastPage(d.currentPage, d.data[this.totalField]) ?
+                        this._generateClass('icon-right icon-disabled') : this._generateClass('icon icon-right');
+              }).bind(this));
+
+      pagersUpdate.select('tspan.icon-left')
+              .attr('class', (function(d) {
+                return this._isFirstPage(d.currentPage) ?
+                        this._generateClass('icon-left icon-disabled') : this._generateClass('icon icon-left');
+              }).bind(this));
+
+      pagersData.exit().remove();
+
+    },
+
+    /**
+     * Check the current page is the first page or not
+     * @param {Number} currentPage
+     * @return {Boolean}
+     * @private
+     */
+    _isFirstPage: function(currentPage) {
+      return currentPage === 1;
+    },
+
+    /**
+     * Check the current page is the last page or not
+     * @param {Number} currentPage
+     * @param {Number} total
+     * @return {Boolean}
+     * @private
+     */
+    _isLastPage: function(currentPage, total) {
+      return currentPage * this.itemsPerLevel >= total;
+    },
+
+    /**
+     * Combine given css class with component name to make sure polymer style-scope is applied to d3 elements
+     * @private
+     * @method _generateClass
+     * @param {String} c - The css class to be combined with component name
+     * @return {String}
+     */
+    _generateClass: function(c) {
+      return [this.is, c].join(' ');
+    },
+
+    attached: function() {
+
+      // init hierarchy data from raw data
+      this._hierarchyData = d3.hierarchy(this.dataSource, function(d) { return d.children; });
+      this._hierarchyData.currentPage = 0;
+      this._hierarchyData.x0 = 0;
+      this._hierarchyData.y0 = 0;
+
+      // collapse all node after initialization
+//      this._collapse(this._hierarchyData);
+
+      this._updateTree(this._hierarchyData);
+
+    },
+
+    /**
+     * Create d3.tree method from width and height
+     * @param w
+     * @param h
+     * @returns {Object}
+     * @private
+     */
+    _computeD3Tree: function(w, h) {
+      return d3.tree().size([h, w]);
+    },
+
+    /**
+     * Calculate a width of SVG
+     * @param width
+     * @param mRight
+     * @param mLeft
+     * @returns {*}
+     * @private
+     */
+    _computeSVGWidth: function(width, mRight, mLeft) {
+      return width + mRight + mLeft;
+    },
+
+    /**
+     * Caculate a height of SVG
+     * @param height
+     * @param mTop
+     * @param mBottom
+     * @returns {Number}
+     * @private
+     */
+    _computeSVGHeight: function(height, mTop, mBottom) {
+      return height + mTop + mBottom;
+    },
+
+    /**
+     * Move SVG to top-left position of container
+     * @param margin
+     * @returns {String}
+     * @private
+     */
+    _computeTransform: function(margin) {
+      return 'translate(' + margin.left + ',' + margin.top + ')';
+    },
+
+    /**
+     * Run through all the nodes and find which one is expanding. This is used to identify pager
+     * @returns {Array}
+     * @private
+     */
+    _findExpandingNodes: function() {
+
+      var queue = [this._hierarchyData], expandingNodes = [], node;
+
+      while (queue.length > 0) {
+        node = queue.pop();
+        if (node.children) {
+          expandingNodes.push(node);
+          queue = queue.concat(node.children);
+        }
+      }
+
+      return expandingNodes;
+    },
+
+    _openNodeProps: function(node) {
+
+      var nodeViewer = document.createElement('node-viewer');
+      nodeViewer.nodeData = node;
+
+      Polymer.dom(this.$.container).appendChild(nodeViewer);
+
+      nodeViewer.addEventListener('save', (function(e) {
+        this._updateTree(e.detail.node);
+      }).bind(this));
+
+      nodeViewer.addEventListener('close', (function() {
+        Polymer.dom(this.$.container).removeChild(nodeViewer);
+      }).bind(this));
+
+    }
+
+  });
+</script>

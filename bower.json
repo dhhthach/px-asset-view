@@ -1,0 +1,65 @@
+{
+  "name": "px-asset-view",
+  "version": "0.0.1",
+  "main": [
+    "px-asset-view.html"
+  ],
+  "ignore": [
+    ".*",
+    "npm-debug.log",
+    "gulpfile.js",
+    "sass",
+    "bower_components",
+    "node_modules",
+    "test",
+    "OSS_Notice.pdf",
+    "scripts",
+    ".github",
+    "px-asset-view.png",
+    "LICENSE.md",
+    "CONTRIBUTING.md",
+    "HISTORY.md",
+    "README.md",
+    ".jshintrc",
+    ".editorconfig"
+  ],
+  "dependencies": {
+    "polymer": "^1.6.1",
+    "px-theme": "^1.1.2",
+    "q": "^1.0.0",
+    "px-spinner": "^0.5.0",
+    "px-vis": "^0.8.4"
+  },
+  "devDependencies": {
+    "px-forms-design": "^0.3.17",
+    "px-tables-design": "^0.3.13",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.2.5",
+    "px-polymer-font-awesome": "^0.1.9",
+    "px-tabs": "~0.5.2",
+    "px-api-viewer": "^0.1.0",
+    "px-demo-snippet": "^0.6.14",
+    "px-list-inline-design": "^0.2.11",
+    "px-toggle-design": "^0.2.12",
+    "px-headings-design": "^0.2.14",
+    "px-actionable-text-icons-design": "^0.1.0",
+    "px-code-design": "^0.2.11",
+    "px-list-bare-design": "^0.2.13",
+    "px-meta-lists-design": "^0.3.4",
+    "px-dropdown": "^0.12.1",
+    "px-starter-kit-design": "~0.6.0"
+  },
+  "resolutions": {
+    "px-theme": "^2.0.1",
+    "px-colors-design": "^0.3.0",
+    "px-defaults-design": "^1.0.2",
+    "px-polymer-font-awesome": "^1.1.0",
+    "px-clipboard": "^0.2.0",
+    "px-actionable-text-icons-design": "^1.1.0",
+    "px-mixins-design": "^0.3.0",
+    "px-spacing-design": "^0.4.0",
+    "px-dropdown": "^0.12.1",
+    "px-tooltip": "^0.10.0",
+    "iron-dropdown": "^1.5.4",
+    "pxd3": "~4.4.0"
+  }
+}

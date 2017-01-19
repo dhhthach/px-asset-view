@@ -1,0 +1,52 @@
+[
+    {
+        "name": "Asset 1",
+        "total": 0,
+        "icon": "f085"
+    },
+    {
+        "name": "Asset 2",
+        "total": 0,
+        "icon": "f15b"
+    },
+    {
+        "name": "Asset 3",
+        "total": 0,
+        "icon": "f09e"
+    },
+    {
+        "name": "Asset 4",
+        "total": 45,
+        "icon": "f1fe"
+    },
+    {
+        "name": "A long name label should has ellipsis",
+        "total": 5,
+        "icon": "f085"
+    },
+    {
+        "name": "Asset 6",
+        "total": 25,
+        "icon": "f15b"
+    },
+    {
+        "name": "Asset 7",
+        "total": 0,
+        "icon": "f09e"
+    },
+    {
+        "name": "Asset 8",
+        "total": 0,
+        "icon": "f1fe"
+    },
+    {
+        "name": "Asset 9",
+        "total": 0,
+        "icon": "f085"
+    },
+    {
+        "name": "Asset 10",
+        "total": 25,
+        "icon": "f15b"
+    }
+]
