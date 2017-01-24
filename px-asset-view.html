@@ -56,6 +56,7 @@ Define how your data will come in using these methods:
           <g transform$="[[_computeTransform(_margin)]]"></g>
         </svg>
       </div>
+      <div id="export_btn" on-click="_exportJsonData">Export JSON</div>
     </div>
   </template>
 </dom-module>
@@ -420,7 +421,7 @@ Define how your data will come in using these methods:
     _getIdealHeight: function(hierarchyData) {
 
       // normalize coordinate of node using nodeSize() instead of size()
-      d3.tree().nodeSize([50, 50])(hierarchyData);
+      d3.tree().nodeSize([70, 70])(hierarchyData);
 
       var lowestX = 0, highestX = 0, children = [hierarchyData];
 
@@ -533,7 +534,7 @@ Define how your data will come in using these methods:
                 return String.fromCharCode(charCode);
               })
               .on('click', (function(d) {
-                this._openNodeProps.call(this, d);
+                this._deleteNodes.call(this, d);
               }).bind(this));
 
       // UPDATE
@@ -564,6 +565,11 @@ Define how your data will come in using these methods:
                 } else {
                   return d.data[this.labelField];
                 }
+              }).bind(this));
+
+      nodesUpdate.select('.node-counter')
+              .text((function(d){
+                return d.parent ? '(' + d.data[this.totalField] + ')' : '';
               }).bind(this));
 
       nodesData.exit().transition()
@@ -826,6 +832,7 @@ Define how your data will come in using these methods:
       Polymer.dom(this.$.container).appendChild(nodeViewer);
 
       nodeViewer.addEventListener('save', (function(e) {
+        this._saveJsonData(e.detail.node);
         this._updateTree(e.detail.node);
       }).bind(this));
 
@@ -833,6 +840,50 @@ Define how your data will come in using these methods:
         Polymer.dom(this.$.container).removeChild(nodeViewer);
       }).bind(this));
 
+    },
+
+    _exportJsonData: function() {
+      console.log(this.dataSource);
+    },
+
+    _saveJsonData: function(node) {
+      this._findNodeInTree(node);
+    },
+
+    _findNodeInTree: function(node) {
+      var queue = [this.dataSource];
+      var n;
+      while (queue.length > 0) {
+        n = queue.pop();
+        if (n.id === node.data.id) {
+          //todo
+          n.name = node.data.name;
+          n.attributes = node.data.attributes;
+          break;
+        }
+        if (n.children) {
+          queue = queue.concat(n.children);
+        }
+      }
+    },
+
+    _deleteNodes: function(node) {
+      var parent = node.parent;
+      var children;
+      if (parent) {
+        children = parent.children || parent._children;
+        var index = children.findIndex(function(e) {
+          return e.data.id === node.data.id;
+        });
+        children.splice(index, 1);
+        parent.data.total -= 1;
+        if (children.length === 0) {
+          parent.children ? (parent.children = null) : (parent._children = null);
+        }
+        this._updateTree(parent);
+      } else {
+        console.log('Can not delete root node');
+      }
     }
 
   });
