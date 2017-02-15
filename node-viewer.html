@@ -72,8 +72,17 @@
       nodeData: {
         type: Object,
         value: function() {
-          return {};
+          return {
+            data: {
+              name: 'Node name',
+              attributes: []
+            }
+          };
         }
+      },
+      isNew: {
+        type: Boolean,
+        value: false
       },
       _cloneAttributes: {
         type: Array,
@@ -88,11 +97,11 @@
       this.nodeData.data.attributes = [...document.querySelectorAll('div.attr-name')].map(function(e) {
         return e.textContent;
       });
-      this.fire('save', {node: this.nodeData});
+      this.fire('save', this.nodeData);
       this._close();
     },
 
-    _close: function(e) {
+    _close: function() {
       this.fire('close');
     },
 
@@ -101,7 +110,6 @@
     },
 
     _removeAttribute: function(e) {
-      debugger;
       this.splice('_cloneAttributes', e.target.index, 1);
     },
 

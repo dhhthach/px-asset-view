@@ -56,7 +56,7 @@ Define how your data will come in using these methods:
           <g transform$="[[_computeTransform(_margin)]]"></g>
         </svg>
       </div>
-      <div id="export_btn" on-click="_exportJsonData">Export JSON</div>
+      <!--<div id="export_btn" on-click="_exportJsonData">Export JSON</div>-->
     </div>
   </template>
 </dom-module>
@@ -81,7 +81,7 @@ Define how your data will come in using these methods:
         type: Object,
         value: function() {
           return {
-            name: 'Home',
+            name: 'Company',
             icon: 'f015',
             total: 10
           };
@@ -150,7 +150,7 @@ Define how your data will come in using these methods:
        */
       _horizontalGap: {
         type: Number,
-        value: 200
+        value: 270
       },
       /**
        * Margins
@@ -160,7 +160,7 @@ Define how your data will come in using these methods:
       _margin: {
         type: Object,
         value: function() {
-          return {top: 20, right: 90, bottom: 30, left: 90};
+          return {top: 20, right: 50, bottom: 30, left: 50};
         }
       },
       /**
@@ -241,7 +241,7 @@ Define how your data will come in using these methods:
 
     /**
      * Fires whenever children of node is requested
-     * @event px-dendogram-children-request
+     * @event px-asset-view-children-request
      * @param {Object} parent parent node
      * @param {Boolean} isGetNext flag to show get next children or previous children
      */
@@ -284,6 +284,19 @@ Define how your data will come in using these methods:
      */
     _updateTree: function (source) {
 
+      /*this._svg.append("svg:defs").selectAll("marker")
+              .data(["end"])      // Different link/path types can be defined here
+              .enter().append("svg:marker")    // This section adds in the arrows
+              .attr("id", String)
+              .attr("viewBox", "0 -3 10 10")
+              .attr("refX", 15)
+              .attr("refY", -1.5)
+              .attr("markerWidth", 6)
+              .attr("markerHeight", 6)
+              .attr("orient", "auto")
+              .append("svg:path")
+              .attr("d", "M0,-3L10,0L0,3");*/
+
       this._getIdealHeight(this._hierarchyData);
 
       var treeData = this._D3Tree(this._hierarchyData);
@@ -302,7 +315,9 @@ Define how your data will come in using these methods:
       // NODES
 
       var nodesData = this._svg.selectAll('g.node')
-              .data(nodes, (function(d) {return d.data[this.idField] || (d.data[this.idField] = ++ this._autoGenId);}).bind(this));
+              .data(nodes, (function(d) {
+                return d.data[this.idField] || (d.data[this.idField] = ++ this._autoGenId);
+              }).bind(this));
 
       this._renderNodes(nodesData, source);
 
@@ -341,7 +356,9 @@ Define how your data will come in using these methods:
      * @private
      */
     _diagonal: function(s, d) {
-      return ['M', s.y, s.x, 'C', (s.y + d.y ) / 2, s.x, (s.y + d.y ) / 2, d.x, d.y, d.x].join(' ');
+//      return ['M', s.y, s.x, 'C', (s.y + d.y ) / 2, s.x, (s.y + d.y ) / 2, d.x, d.y, d.x].join(' ');
+        return ['M', d.y, d.x, 'C', (s.y + d.y ) / 2, d.x, (s.y + d.y ) / 2, s.x, s.y, s.x].join(' ');
+
     },
 
     /**
@@ -382,8 +399,8 @@ Define how your data will come in using these methods:
      * @private
      */
     _updateSelectedNodeDOM: function (selectedNodeDOM) {
-      d3.select('.node-selected').classed('node-selected', false);
-      d3.select(selectedNodeDOM.parentElement).classed('node-selected', true);
+      //d3.select('.node-selected').classed('node-selected', false);
+      //d3.select(selectedNodeDOM.parentElement).classed('node-selected', true);
     },
 
     /**
@@ -397,7 +414,11 @@ Define how your data will come in using these methods:
 
       //add new nodes
       if (childrenData){
-        node.children = [];
+        if (this.useStaticData) {
+          node.children = node.children || [];
+        } else {
+          node.children = []
+        }
         childrenData.forEach(function(data){
           var newNode = d3.hierarchy(data, function(d) { return d.children; });
           newNode.parent = node;
@@ -438,7 +459,8 @@ Define how your data will come in using these methods:
 
       }
 
-      this.set('_height', highestX - lowestX);
+      var height = highestX - lowestX > 100 ? highestX - lowestX : 100;
+      this.set('_height', height);
 
     },
 
@@ -452,7 +474,7 @@ Define how your data will come in using these methods:
 
       var nodesEnter = nodesData.enter().append('g')
               .attr('class', (function(d) {
-                return d.children ? this._generateClass('node node-visited') : this._generateClass('node');
+                return this._generateClass('node');
               }).bind(this))
               .attr('transform', function() {
                 return 'translate(' + source.y0 + ',' + source.x0 + ')';
@@ -470,7 +492,7 @@ Define how your data will come in using these methods:
               .attr('class', 'node')
               .classed(this.is, true);
 
-      circleGroup.append('text')
+      /*circleGroup.append('text')
               .attr('dy', '.35em')
               .attr('text-anchor', 'middle')
               .style('font-family', 'FontAwesome')
@@ -478,16 +500,16 @@ Define how your data will come in using these methods:
               .text(function(d) {
                 var charCode = parseInt(d.data.icon, 16);
                 return String.fromCharCode(charCode);
-              });
+              });*/
 
       // Add labels for the nodes
       var labelGroup = nodesEnter.append('text')
               .attr('dy', '.35em')
               .attr('x', function(d) {
-                return d.parent ? 25 : -25;
+                return 20; //d.parent ? 25 : -25;
               })
               .attr('text-anchor', function(d) {
-                return d.parent ? 'start' : 'end';
+                return 'start'; //d.parent ? 'start' : 'end';
               })
               .attr('class', 'node-text').classed(this.is, true);
 
@@ -508,33 +530,44 @@ Define how your data will come in using these methods:
                 }
               }).bind(this));
 
-      labelGroup.append('tspan')
+      /*labelGroup.append('tspan')
               .attr('class', 'node-counter').classed(this.is, true)
               .attr('dx', '5')
               .text((function(d){
                 return d.parent ? '(' + d.data[this.totalField] + ')' : '';
-              }).bind(this));
+              }).bind(this));*/
 
       labelGroup.append('tspan')
               .attr('dx', '5')
-              .style('font-family', 'FontAwesome')
+              .style('font-family', 'FontAwesome').style('cursor', 'pointer')
               .text(function(d) {
-                var charCode = parseInt('f040', 16);
+                var charCode = parseInt('f044', 16);
                 return String.fromCharCode(charCode);
               })
               .on('click', (function(d) {
-                this._openNodeProps.call(this, d);
+                this._editNode.call(this, d);
               }).bind(this));
 
       labelGroup.append('tspan')
               .attr('dx', '5')
-              .style('font-family', 'FontAwesome')
+              .style('font-family', 'FontAwesome').style('cursor', 'pointer')
               .text(function(d) {
-                var charCode = parseInt('f00d', 16);
+                var charCode = parseInt('f147', 16);
                 return String.fromCharCode(charCode);
               })
               .on('click', (function(d) {
                 this._deleteNodes.call(this, d);
+              }).bind(this));
+
+      labelGroup.append('tspan')
+              .attr('dx', '5')
+              .style('font-family', 'FontAwesome').style('cursor', 'pointer')
+              .text(function(d) {
+                var charCode = parseInt('f196', 16);
+                return String.fromCharCode(charCode);
+              })
+              .on('click', (function(d) {
+                this._createNode.call(this, d);
               }).bind(this));
 
       // UPDATE
@@ -546,15 +579,16 @@ Define how your data will come in using these methods:
                 return 'translate(' + d.y + ',' + d.x + ')';
               })
               .attr('class', (function(d) {
-                return d.children ? this._generateClass('node node-visited') : this._generateClass('node');
+//                return d.children ? this._generateClass('node node-visited') : this._generateClass('node');
+                return this._generateClass('node');
               }).bind(this));
 
       nodesUpdate.select('circle.node')
-              .attr('r', 15);
+              .attr('r', 10);
 
       nodesUpdate.select('title')
               .text((function(d){
-                        return d.data[this.labelField] + ' (' + d.data[this.totalField] + ')'; }
+                        return d.data[this.labelField];}// + ' (' + d.data[this.totalField] + ')'; }
               ).bind(this));
 
       nodesUpdate.select('.node-label')
@@ -567,10 +601,10 @@ Define how your data will come in using these methods:
                 }
               }).bind(this));
 
-      nodesUpdate.select('.node-counter')
+      /*nodesUpdate.select('.node-counter')
               .text((function(d){
                 return d.parent ? '(' + d.data[this.totalField] + ')' : '';
-              }).bind(this));
+              }).bind(this));*/
 
       nodesData.exit().transition()
               .duration(this._duration)
@@ -595,6 +629,7 @@ Define how your data will come in using these methods:
                 var o = {x: source.x0, y: source.y0};
                 return this._diagonal(o, o)
               }).bind(this));
+//              .attr("marker-end", "url(#end)");
 
       var linksUpdate = linksEnter.merge(linksData);
 
@@ -752,8 +787,6 @@ Define how your data will come in using these methods:
       this._hierarchyData.x0 = 0;
       this._hierarchyData.y0 = 0;
 
-      // collapse all node after initialization
-//      this._collapse(this._hierarchyData);
 
       this._updateTree(this._hierarchyData);
 
@@ -824,7 +857,7 @@ Define how your data will come in using these methods:
       return expandingNodes;
     },
 
-    _openNodeProps: function(node) {
+    _editNode: function(node) {
 
       var nodeViewer = document.createElement('node-viewer');
       nodeViewer.nodeData = node;
@@ -832,8 +865,8 @@ Define how your data will come in using these methods:
       Polymer.dom(this.$.container).appendChild(nodeViewer);
 
       nodeViewer.addEventListener('save', (function(e) {
-        this._saveJsonData(e.detail.node);
-        this._updateTree(e.detail.node);
+        this._updateRawJSON(e.detail);
+        this._updateTree(e.detail);
       }).bind(this));
 
       nodeViewer.addEventListener('close', (function() {
@@ -842,23 +875,63 @@ Define how your data will come in using these methods:
 
     },
 
-    _exportJsonData: function() {
-      console.log(this.dataSource);
+    _createNode: function(node) {
+
+      var nodeViewer = document.createElement('node-viewer');
+      nodeViewer.isNew = true;
+
+      Polymer.dom(this.$.container).appendChild(nodeViewer);
+
+      nodeViewer.addEventListener('save', (function(e) {
+        this._updateHierarchy(node, [e.detail.data]);
+        this._updateRawJSON(node, e.detail.data);
+        this._updateTree(node);
+      }).bind(this));
+
+      nodeViewer.addEventListener('close', (function() {
+        Polymer.dom(this.$.container).removeChild(nodeViewer);
+      }).bind(this));
+
     },
 
-    _saveJsonData: function(node) {
-      this._findNodeInTree(node);
+    retrieveJsonData: function() {
+//      return JSON.parse(JSON.stringify(this.dataSource, ['name', 'attributes', 'children']));
+      var nodes = [];
+      var queue = [this.dataSource];
+      var n;
+      while (queue.length > 0) {
+        n = queue.pop();
+        nodes.push({
+          name : n.name,
+          attributes: n.attributes,
+          parent: n.parent
+        });
+        if (n.children) {
+          queue = queue.concat(n.children.map(function(e) {
+            e.parent = n.name;
+            return e;
+          }));
+        }
+      }
+
+      return {
+        nodes: nodes
+      }
     },
 
-    _findNodeInTree: function(node) {
+    _updateRawJSON: function(node, newNodeData) {
       var queue = [this.dataSource];
       var n;
       while (queue.length > 0) {
         n = queue.pop();
         if (n.id === node.data.id) {
-          //todo
-          n.name = node.data.name;
-          n.attributes = node.data.attributes;
+          if (newNodeData) {
+            n.children = n.children || [];
+            n.children.push(newNodeData);
+          } else {
+            n.name = node.data.name;
+            n.attributes = node.data.attributes;
+          }
           break;
         }
         if (n.children) {
@@ -880,9 +953,27 @@ Define how your data will come in using these methods:
         if (children.length === 0) {
           parent.children ? (parent.children = null) : (parent._children = null);
         }
+        this._updateRawJSONonDelete(parent, node);
         this._updateTree(parent);
       } else {
-        console.log('Can not delete root node');
+        alert('Can not delete root node');
+      }
+    },
+
+    _updateRawJSONonDelete: function(parentNode, removedNode) {
+      var queue = [this.dataSource];
+      var n;
+      while (queue.length > 0) {
+        n = queue.pop();
+        if (n.name === parentNode.data.name) {
+          n.children = n.children.filter(function(e) {
+            return e.name != removedNode.data.name;
+          });
+          break;
+        }
+        if (n.children) {
+          queue = queue.concat(n.children);
+        }
       }
     }
 
