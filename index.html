@@ -69,16 +69,17 @@
         <section class="tab-page">
           <div class="mega-demo flex u-ph++ u-pb++">
             <!-- Properties -->
-            <div class="properties u-ph+ u-pb+ u-mt+">
+            <!--<div class="properties u-ph+ u-pb+ u-mt+">
               <p class="epsilon">Properties</p>
               <div class="u-mb-">Items Per Level: <input class="text-input" disabled type="text" placeholder="{{item.itemsPerLevel}}"/></div>
-            </div>
+            </div>-->
 
             <div class="demoContainer u-mt+">
               <!-- demo -->
               <div class="flex flex--col">
                 <div class="flex__item demo u-ph+ u-pb+">
                   <div class="u-mt+">
+                    <button id="test-btn" onclick="dummyclick()">ExportJSON</button>
                     <px-asset-view items-per-level="{{item.itemsPerLevel}}"
                                    data-source="{{item.dataSource}}"
                                    use-static-data="{{item.useStaticData}}">
@@ -151,6 +152,15 @@
   </footer>
 </template>
 <script>
+
+  function dummyclick() {
+    var link = document.createElement('a');
+    link.target = '_blank';
+    link.href = 'data:text/plain;charset=UTF-8,' + encodeURIComponent(JSON.stringify(document.querySelector('px-asset-view').retrieveJsonData(), null, '    '));
+//    link.download = 'template.json';
+    link.click();
+  }
+
   window.addEventListener('WebComponentsReady', function() {
 
     var template = document.querySelector('template[is=dom-bind]'),

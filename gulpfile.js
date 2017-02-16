@@ -11,6 +11,8 @@ const gulpif = require('gulp-if');
 const combiner = require('stream-combiner2');
 const bump = require('gulp-bump');
 const argv = require('yargs').argv;
+const merge = require('merge-stream');
+const replace = require('gulp-replace');
 
 const sassOptions = {
   importer: importOnce,
@@ -108,3 +110,29 @@ gulp.task('bump:major', function(){
 gulp.task('default', function(callback) {
   gulpSequence('clean', 'sass', 'demosass')(callback);
 });
+
+
+gulp.task('copy', function() {
+  var publicFiles = gulp.src(['**/*', '!dist/**/*', '!node_modules/**/*']).pipe(gulp.dest('./dist'));
+  return merge(publicFiles);
+});
+
+gulp.task('replace:1', function(){
+  gulp.src(['dist/px-asset-view.html'])
+    .pipe(replace(/\.\./g, 'bower_components'))
+    .pipe(gulp.dest('./dist', {overwrite: true}));
+});
+
+gulp.task('replace:2', function(){
+  gulp.src(['dist/index.html'])
+    .pipe(replace(/\.\./g, 'bower_components'))
+    .pipe(gulp.dest('./dist', {overwrite: true}));
+});
+
+gulp.task('replace:3', function(){
+  gulp.src(['dist/node-viewer.html'])
+    .pipe(replace(/\.\.\//g, 'bower_components/'))
+    .pipe(gulp.dest('./dist', {overwrite: true}));
+});
+
+gulp.task('replace', ['replace:1', 'replace:2', 'replace:3']);

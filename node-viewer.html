@@ -3,6 +3,7 @@
 <dom-module id="node-viewer">
 
   <style>
+
     .dialog {
       width: 20%;
       padding: 1rem;
@@ -12,6 +13,7 @@
       top: 0;
       bottom: 0;
       background-color: white;
+      overflow: auto;
     }
 
     #masker {
@@ -34,6 +36,19 @@
       display: inline-block;
       margin: 0.2rem 0.2rem;
     }
+
+    i {
+      cursor: pointer;
+    }
+
+    .save-icon, .close-icon {
+      padding: 0.5em;
+    }
+
+    .save-icon:hover, .close-icon:hover {
+      background-color: gainsboro;
+    }
+
   </style>
   <template>
 
@@ -51,8 +66,8 @@
             </template>
           </div>
           <div class="action">
-            <i class="fa fa-check" on-click="_saveChanges"></i>
-            <i class="fa fa-close" on-click="_close"></i>
+            <i class="fa fa-check save-icon" on-click="_saveChanges"></i>
+            <i class="fa fa-close close-icon" on-click="_close"></i>
           </div>
         </div>
       </div>
