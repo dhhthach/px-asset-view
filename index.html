@@ -79,10 +79,11 @@
               <div class="flex flex--col">
                 <div class="flex__item demo u-ph+ u-pb+">
                   <div class="u-mt+">
-                    <button id="test-btn" onclick="dummyclick()">ExportJSON</button>
-                    <px-asset-view items-per-level="{{item.itemsPerLevel}}"
+                    <button onclick="exportTemplate()" hidden$="{{item.hidden}}">Export {{item.dataType}}</button>
+                    <button onclick="exportInstance()" hidden$="{{!item.hidden}}">Export {{item.dataType}}</button>
+                    <px-asset-view id$="{{item.dataType}}"
                                    data-source="{{item.dataSource}}"
-                                   use-static-data="{{item.useStaticData}}">
+                                   data-type="{{item.dataType}}">
                     </px-asset-view>
                   </div>
                 </div>
@@ -153,11 +154,19 @@
 </template>
 <script>
 
-  function dummyclick() {
+  function exportTemplate() {
+    debugger;
     var link = document.createElement('a');
     link.target = '_blank';
-    link.href = 'data:text/plain;charset=UTF-8,' + encodeURIComponent(JSON.stringify(document.querySelector('px-asset-view').retrieveJsonData(), null, '    '));
-//    link.download = 'template.json';
+    link.href = 'data:text/plain;charset=UTF-8,' + encodeURIComponent(JSON.stringify(document.querySelector('#template').exportJsonData(), null, '    '));
+    link.click();
+  }
+
+  function exportInstance() {
+    debugger;
+    var link = document.createElement('a');
+    link.target = '_blank';
+    link.href = 'data:text/plain;charset=UTF-8,' + encodeURIComponent(JSON.stringify(document.querySelector('#instance').exportJsonData(), null, '    '));
     link.click();
   }
 
@@ -166,26 +175,35 @@
     var template = document.querySelector('template[is=dom-bind]'),
             optionsArray = [
               {
-                useStaticData: true,
+                hidden: false,
+                dataType: 'template',//'instance',
                 dataSource: {
                   name: 'Company',
-                  icon: 'f015',
-                  total: 1/*,
+                  total: 1,
+                  children: []
+                }
+              },{
+                hidden: true,
+                dataType: 'instance',
+                dataSource: {
+                  name: 'GE Building',
+                  total: 1,
+                  uri: '/buildings/1',
                   children: [{
-                    name: 'Building',
-                    icon: 'f015',
+                    name: 'Floor 1',
                     total: 1,
+                    uri: '/floors/1',
                     children: [{
-                      name: 'Floor',
-                      icon: 'f015',
+                      name: 'Room 1',
                       total: 1,
+                      uri: '/rooms/1',
                       children: [{
-                        name: 'Parking lot',
-                        icon: 'f015',
+                        name: 'Sensor 1',
+                        uri: '/sensors/1',
                         total: 0
                       }]
                     }]
-                  }]*/
+                  }]
                 }
               }
             ],

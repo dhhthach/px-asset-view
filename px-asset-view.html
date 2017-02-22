@@ -7,7 +7,9 @@
 <link rel="import" href="../px-spinner/px-spinner.html"/>
 <link rel="import" href="../px-vis/px-vis-d3.html"/>
 <link rel="import" href="tree-behavior.html">
-<link rel="import" href="node-viewer.html"/>
+<link rel="import" href="template-viewer.html"/>
+<link rel="import" href="instance-viewer.html"/>
+
 
 <link rel="import" href="css/px-asset-view-styles.html">
 
@@ -22,7 +24,7 @@ Minimum:
 
 Advanced:
 
-    <px-asset-view items-per-level='10'
+    <px-asset-view type='template'
                    data-source='{"name": "Home", "icon": "f015", "total": 10}'>
     </px-asset-view>
 
@@ -57,7 +59,11 @@ Define how your data will come in using these methods:
           <g transform$="[[_computeTransform(_margin)]]"></g>
         </svg>
       </div>
-      <!--<div id="export_btn" on-click="_exportJsonData">Export JSON</div>-->
+      <div id="menu" on-blur="_hideActionMenu">
+        <div class="item" on-click="_editNode"><i class="fa fa-edit"></i> Edit</div>
+        <div class="item" on-click="_createNode"><i class="fa fa-plus-square-o"></i> Create</div>
+        <div class="item" on-click="_deleteNode"><i class="fa fa-minus-square-o"></i> Delete</div>
+      </div>
     </div>
   </template>
 </dom-module>
@@ -68,134 +74,223 @@ Define how your data will come in using these methods:
 
     is: 'px-asset-view',
 
+    listeners: {
+      'click' : 'onClick'
+    },
+
     properties: {
-      isTemplate: {
-        type: Boolean,
-        value: true
+      dataType: {
+        type: String,
+        value: 'template'
+      },
+      workingNode: {
+        type: Object,
+        value: {}
+      },
+      decoratedProps: {
+        type: Array,
+        value: function() {
+          return ['total', 'children', 'id'];
+        }
       }
     },
 
     behaviors: [MyBehaviors.TreeBehavior],
 
-    _editNode: function(node) {
-
-      var nodeViewer = document.createElement('node-viewer');
-      nodeViewer.nodeData = node;
-
-      Polymer.dom(this.$.container).appendChild(nodeViewer);
-
-      nodeViewer.addEventListener('save', (function(e) {
-        this._updateRawJSON(e.detail);
-        this._updateTree(e.detail);
-      }).bind(this));
-
-      nodeViewer.addEventListener('close', (function() {
-        Polymer.dom(this.$.container).removeChild(nodeViewer);
-      }).bind(this));
-
-    },
-
-    _createNode: function(node) {
-
-      var nodeViewer = document.createElement('node-viewer');
-      nodeViewer.isNew = true;
-
-      Polymer.dom(this.$.container).appendChild(nodeViewer);
-
-      nodeViewer.addEventListener('save', (function(e) {
-        this._updateHierarchy(node, [e.detail.data]);
-        this._updateRawJSON(node, e.detail.data);
-        this._updateTree(node);
-      }).bind(this));
-
-      nodeViewer.addEventListener('close', (function() {
-        Polymer.dom(this.$.container).removeChild(nodeViewer);
-      }).bind(this));
-
-    },
-
-    retrieveJsonData: function() {
-//      return JSON.parse(JSON.stringify(this.dataSource, ['name', 'attributes', 'children']));
-      var nodes = [];
-      var queue = [this.dataSource];
-      var n;
-      while (queue.length > 0) {
-        n = queue.pop();
-        nodes.push({
-          name : n.name,
-          attributes: n.attributes,
-          parent: n.parent
-        });
-        if (n.children) {
-          queue = queue.concat(n.children.map(function(e) {
-            e.parent = n.name;
-            return e;
-          }));
-        }
-      }
-
-      return {
-        nodes: nodes
+    onClick: function(e) {
+      if (!e.target.classList.contains('menu-icon')) {
+        this._hideActionMenu();
       }
     },
 
-    _updateRawJSON: function(node, newNodeData) {
-      var queue = [this.dataSource];
-      var n;
-      while (queue.length > 0) {
-        n = queue.pop();
-        if (n.id === node.data.id) {
-          if (newNodeData) {
-            n.children = n.children || [];
-            n.children.push(newNodeData);
-          } else {
-            n.name = node.data.name;
-            n.attributes = node.data.attributes;
-          }
-          break;
-        }
-        if (n.children) {
-          queue = queue.concat(n.children);
-        }
-      }
+    _hideActionMenu: function() {
+      this.$.menu.style.display = 'none';
     },
 
-    _deleteNodes: function(node) {
-      var parent = node.parent;
+    _showActionMenu: function(node, mouseEvent) {
+
+      this.$.menu.style.display = 'block';
+      this.$.menu.style.top = mouseEvent.offsetY + 'px';
+      this.$.menu.style.left = mouseEvent.offsetX + 'px';
+
+      this.set('workingNode', node);
+
+    },
+
+    _editNode: function() {
+
+      var viewer = document.createElement(this.dataType + '-viewer');
+      viewer.nodeData = this.workingNode;
+
+      Polymer.dom(this.$.container).appendChild(viewer);
+      this.$.container.scrollIntoView();
+
+      viewer.addEventListener('save', (function(e) {
+        this.dataType === 'template' ? this._onEditTemplate(e) : this._onEditInstance(e);
+      }).bind(this));
+
+      viewer.addEventListener('close', (function() {
+        Polymer.dom(this.$.container).removeChild(viewer);
+      }).bind(this));
+
+    },
+
+    _createNode: function() {
+
+      var viewer = document.createElement(this.dataType + '-viewer');
+
+      Polymer.dom(this.$.container).appendChild(viewer);
+      this.$.container.scrollIntoView();
+
+      viewer.addEventListener('save', (function(e) {
+        this.dataType === 'template' ? this._onCreateTemplate(e) : this._onCreateInstance(e);
+      }).bind(this));
+
+      viewer.addEventListener('close', (function() {
+        Polymer.dom(this.$.container).removeChild(viewer);
+      }).bind(this));
+
+    },
+
+    _deleteNode: function() {
+
+      var parent = this.workingNode.parent;
       var children;
       if (parent) {
         children = parent.children || parent._children;
-        var index = children.findIndex(function(e) {
-          return e.data.id === node.data.id;
-        });
-        children.splice(index, 1);
+        var index = children.findIndex((function(e) {
+          return e.data.id === this.workingNode.data.id;
+        }).bind(this));
+//        var deleteNode = children.splice(index, 1);
+        this.fire('px-asset-view-delete', this._doExport(children.splice(index, 1)[0]));
         parent.data.total -= 1;
         if (children.length === 0) {
           parent.children ? (parent.children = null) : (parent._children = null);
         }
-        this._updateRawJSONonDelete(parent, node);
         this._updateTree(parent);
       } else {
         alert('Can not delete root node');
       }
     },
 
-    _updateRawJSONonDelete: function(parentNode, removedNode) {
-      var queue = [this.dataSource];
-      var n;
-      while (queue.length > 0) {
-        n = queue.pop();
-        if (n.name === parentNode.data.name) {
-          n.children = n.children.filter(function(e) {
-            return e.name != removedNode.data.name;
+    _doExport: function(hierarchyData) {
+      var nodes = [];
+      var queue = [hierarchyData];
+      var n, children, keys;
+
+      if(this.dataType === 'template') {
+        while (queue.length > 0) {
+          n = queue.pop();
+          nodes.push({
+            name : n.data.name,
+            attributes: n.data.attributes,
+            parent: n.data.parent
           });
-          break;
+          children = n.children || n._children;
+          if (children) {
+            queue = queue.concat(children.map(function(e) {
+              e.data.parent = n.data.name;
+              return e;
+            }));
+          }
         }
-        if (n.children) {
-          queue = queue.concat(n.children);
+      } else { // for instance
+        while (queue.length > 0) {
+          n = queue.pop();
+          keys = Object.keys(n.data);
+
+          var obj = {
+            parent : n.data.parent
+          };
+
+          keys.forEach((function(k) {
+            if (this.decoratedProps.indexOf(k) === -1) {
+              obj[k] = n.data[k];
+            }
+          }).bind(this));
+
+          nodes.push(obj);
+
+          children = n.children || n._children;
+          if (children) {
+            queue = queue.concat(children.map(function (e) {
+              e.data.parent = n.data.uri;
+              return e;
+            }));
+          }
         }
       }
-    }
+      return {
+        nodes: nodes
+      }
+    },
 
+    _onCreateTemplate: function(e) {
+      e.detail.total = 0;
+      this.set('workingNode.data.total',  this.workingNode.data.total + 1);
+      this._updateHierarchy(this.workingNode, [e.detail]);
+      this._updateTree(this.workingNode);
+    },
+
+    _onCreateInstance: function(e) {
+
+      var obj = {};
+
+      obj.name = e.detail.name;
+
+      e.detail.attributes.forEach(function(p) {
+        obj[p.key] = p.value;
+      });
+
+      obj.parent = this.workingNode.data.uri;
+
+      this.fire('px-asset-view-update', {nodes: [obj]});
+
+      obj.total = 0;
+
+      this.set('workingNode.data.total',  this.workingNode.data.total + 1);
+
+      this._updateHierarchy(this.workingNode, [obj]);
+      this._updateTree(this.workingNode);
+
+    },
+
+    _onEditTemplate: function(e) {
+//      this.set('workingNode.data.name', e.detail.name);
+      this.set('workingNode.data', {
+        name: e.detail.name,
+        attributes: e.detail.attributes
+      });
+      this._updateTree(this.workingNode);
+    },
+
+    _onEditInstance: function(e) {
+      var obj = {};
+
+      //store name
+      obj.name = e.detail.name;
+
+      //store real data
+      e.detail.attributes.forEach(function(p) {
+        obj[p.key] = p.value;
+      });
+
+      obj.parent = this.workingNode.parent.data.uri;
+
+      this.fire('px-asset-view-update', {nodes: [obj]});
+
+      //store props to render D3 tree
+      this.decoratedProps.forEach((function(p) {
+        obj[p] = this.workingNode.data[p];
+      }).bind(this));
+
+      this.set('workingNode.data', obj);
+
+      this._updateTree(this.workingNode);
+    },
+
+    exportJsonData: function() {
+      return this._doExport(this._hierarchyData);
+    }
   });
 </script>

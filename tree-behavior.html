@@ -15,11 +15,7 @@
       dataSource: {
         type: Object,
         value: function() {
-          return {
-            name: 'Company',
-            icon: 'f015',
-            total: 10
-          };
+          return {};
         }
       },
       /**
@@ -28,7 +24,7 @@
        */
       useStaticData: {
         type: Boolean,
-        value: false
+        value: true
       },
       /**
        * Specify the nodes per level
@@ -85,7 +81,7 @@
        */
       _horizontalGap: {
         type: Number,
-        value: 270
+        value: 250
       },
       /**
        * Margins
@@ -219,19 +215,6 @@
      */
     _updateTree: function (source) {
 
-      /*this._svg.append("svg:defs").selectAll("marker")
-       .data(["end"])      // Different link/path types can be defined here
-       .enter().append("svg:marker")    // This section adds in the arrows
-       .attr("id", String)
-       .attr("viewBox", "0 -3 10 10")
-       .attr("refX", 15)
-       .attr("refY", -1.5)
-       .attr("markerWidth", 6)
-       .attr("markerHeight", 6)
-       .attr("orient", "auto")
-       .append("svg:path")
-       .attr("d", "M0,-3L10,0L0,3");*/
-
       this._getIdealHeight(this._hierarchyData);
 
       var treeData = this._D3Tree(this._hierarchyData);
@@ -251,7 +234,7 @@
 
       var nodesData = this._svg.selectAll('g.node')
               .data(nodes, (function(d) {
-                return d.data[this.idField] || (d.data[this.idField] = ++ this._autoGenId);
+                return d.data[this.idField] || (d.data[this.idField] = ++ this._autoGenId);// Date().getTime());
               }).bind(this));
 
       this._renderNodes(nodesData, source);
@@ -377,7 +360,7 @@
     _getIdealHeight: function(hierarchyData) {
 
       // normalize coordinate of node using nodeSize() instead of size()
-      d3.tree().nodeSize([70, 70])(hierarchyData);
+      d3.tree().nodeSize([100, 100])(hierarchyData);
 
       var lowestX = 0, highestX = 0, children = [hierarchyData];
 
@@ -460,54 +443,30 @@
               .attr('dx', '5')
               .text((function(d){
                 var label = d.data[this.labelField] + d.data[this.totalField];
-                if ( label.length > 20 ) {
-                  return d.data[this.labelField].slice(0, 20 /*- d.data[this.totalField].toString().length*/) + '...';
+                if ( label.length > 25 ) {
+                  return d.data[this.labelField].slice(0, 25 - d.data[this.totalField].toString().length) + '...';
                 } else {
                   return d.data[this.labelField];
                 }
               }).bind(this));
 
-      /*labelGroup.append('tspan')
+      labelGroup.append('tspan')
        .attr('class', 'node-counter').classed(this.is, true)
        .attr('dx', '5')
        .text((function(d){
        return d.parent ? '(' + d.data[this.totalField] + ')' : '';
-       }).bind(this));*/
+       }).bind(this));
 
       labelGroup.append('tspan')
               .attr('dx', '5')
-              .attr('class', 'edit-icon').classed(this.is, true)
+              .attr('class', 'menu-icon').classed(this.is, true)
               .style('font-family', 'FontAwesome').style('cursor', 'pointer')
               .text(function(d) {
-                var charCode = parseInt('f044', 16);
+                var charCode = parseInt('f0d7', 16);
                 return String.fromCharCode(charCode);
               })
               .on('click', (function(d) {
-                this._editNode.call(this, d);
-              }).bind(this));
-
-      labelGroup.append('tspan')
-              .attr('dx', '5')
-              .attr('class', 'delete-icon').classed(this.is, true)
-              .style('font-family', 'FontAwesome').style('cursor', 'pointer')
-              .text(function(d) {
-                var charCode = parseInt('f147', 16);
-                return String.fromCharCode(charCode);
-              })
-              .on('click', (function(d) {
-                this._deleteNodes.call(this, d);
-              }).bind(this));
-
-      labelGroup.append('tspan')
-              .attr('dx', '5')
-              .attr('class', 'create-icon').classed(this.is, true)
-              .style('font-family', 'FontAwesome').style('cursor', 'pointer')
-              .text(function(d) {
-                var charCode = parseInt('f196', 16);
-                return String.fromCharCode(charCode);
-              })
-              .on('click', (function(d) {
-                this._createNode.call(this, d);
+                this._showActionMenu.call(this, d, d3.event);
               }).bind(this));
 
       // UPDATE
@@ -526,30 +485,25 @@
       nodesUpdate.select('circle.node')
               .attr('r', 10);
 
-      /*nodesUpdate.select('text')
-              .attr('dy', function(d) {
-                return '1.5em';
-              });*/
-
       nodesUpdate.select('title')
               .text((function(d){
-                        return d.data[this.labelField];}// + ' (' + d.data[this.totalField] + ')'; }
+                        return d.data[this.labelField] + ' (' + d.data[this.totalField] + ')'; }
               ).bind(this));
 
       nodesUpdate.select('.node-label')
               .text((function(d){
                 var label = d.data[this.labelField] + d.data[this.totalField];
-                if ( label.length > 20 ) {
-                  return d.data[this.labelField].slice(0, 15 /*- d.data[this.totalField].toString().length*/) + '...';
+                if ( label.length > 25 ) {
+                  return d.data[this.labelField].slice(0, 25 - d.data[this.totalField].toString().length) + '...';
                 } else {
                   return d.data[this.labelField];
                 }
               }).bind(this));
 
-      /*nodesUpdate.select('.node-counter')
+      nodesUpdate.select('.node-counter')
        .text((function(d){
        return d.parent ? '(' + d.data[this.totalField] + ')' : '';
-       }).bind(this));*/
+       }).bind(this));
 
       nodesData.exit().transition()
               .duration(this._duration)

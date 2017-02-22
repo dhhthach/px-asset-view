@@ -1,0 +1,158 @@
+<link rel="import" href="../polymer/polymer.html" />
+
+<dom-module id="template-viewer">
+
+  <style>
+
+    .dialog {
+      border: 1px solid gainsboro;
+      box-shadow: 1px 1px black;
+      background-color: white;
+      width: 50%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+    }
+
+    #masker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(255, 255, 255, 0.9);
+    }
+
+    .header {
+      /*padding: 0.5em;*/
+      font-weight: bold;
+      background-color: #3e87e8;
+      color: white;
+      overflow: auto;
+    }
+
+    .header .name {
+      padding: 0.5em;
+    }
+
+    .row {
+      display: flex;
+      padding: 0.5em;
+    }
+
+    .col {
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      flex: 1;
+      min-width: 30%;
+    }
+    .row:nth-of-type(even) {
+      background-color: #e2e8ed;
+    }
+
+    .list {
+      position: absolute;
+      top: 2.3em;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: auto;
+    }
+
+    .action-btn {
+      border-left: 1px solid white;
+      padding: 0.5em;
+      cursor: pointer;
+    }
+
+    input {
+      background-color: transparent;
+      border: none;
+    }
+
+  </style>
+  <template>
+
+    <div id="masker">
+      <div class="dialog">
+        <div class="header">
+          <div class="name float--left"><input type="text" style="font-weight: bold;color: white;" value="{{_clonedData.name::input}}"/></div>
+          <div class="action-btn close-btn float--right" on-click="_closeDialog">Close</div>
+          <div class="action-btn save-btn float--right" on-click="_saveChanges">Save</div>
+          <div class="action-btn add-btn float--right" on-click="_addAttribute">Add Attribute</div>
+        </div>
+        <div class="list">
+          <template is="dom-repeat" items="{{_clonedData.attributes}}">
+            <div class="row">
+              <i on-click="_removeAttribute" style="margin-right: 0.5em; margin-top: 0.1em" class="fa fa-close"></i>
+              <div class="col">
+                <input type="text" value="{{item::input}}"/>
+              </div>
+              <div class="col">
+
+              </div>
+              <div class="col">
+
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+  </template>
+
+</dom-module>
+
+<script>
+
+  Polymer({
+
+    is: 'template-viewer',
+
+    properties: {
+      nodeData: {
+        type: Object,
+        value: function() {
+          return {
+            data: {
+              name: 'Node name',
+              attributes: []
+            }
+          };
+        }
+      },
+      _clonedData: {
+        type: Object,
+        computed: '_getData(nodeData)'
+      }
+    },
+
+    _getData: function(nodeData) {
+      return {
+        attributes: nodeData.data.attributes || [],
+        name: nodeData.data.name
+      };
+    },
+
+    _saveChanges: function(e) {
+      this.fire('save', this._clonedData);
+      this._closeDialog();
+    },
+
+    _closeDialog: function() {
+      this.fire('close');
+    },
+
+    _addAttribute: function() {
+      this.push('_clonedData.attributes', 'New Attribute');
+    },
+
+    _removeAttribute: function(e) {
+      this.splice('_clonedData.attributes', e.model.index, 1);
+    }
+
+  });
+</script>

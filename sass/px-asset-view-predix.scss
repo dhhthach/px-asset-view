@@ -45,7 +45,7 @@ common/abstract rules go in px-dendrogram-sketch.scss, not in this file.
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: rgba(white, 0.9);
+    background-color: rgba($white, 0.9);
 
     px-spinner {
       position: absolute;
@@ -55,13 +55,22 @@ common/abstract rules go in px-dendrogram-sketch.scss, not in this file.
     }
   }
 
-  #export_btn {
+  #menu {
+    display: none;
     position: absolute;
-    top: 0;
-    right: 0;
-    padding: 0.5em;
-    background-color: gainsboro;
-    cursor: pointer;
+    background-color: $gray1;
+    width: 5em;
+    i {
+      vertical-align: middle;
+    }
+    .item {
+      padding: 0.5em;
+    }
+    .item:hover {
+      cursor: pointer;
+      background-color: $select-blue-default;
+      color: $white;
+    }
   }
 }
 
@@ -75,8 +84,8 @@ common/abstract rules go in px-dendrogram-sketch.scss, not in this file.
     .delete-icon {
       fill: $red;
     }
-    .edit-icon {
-      fill: $black;
+    .menu-icon {
+      fill: $primary-blue;
     }
   }
   circle {
