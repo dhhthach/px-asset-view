@@ -79,6 +79,12 @@ Define how your data will come in using these methods:
     },
 
     properties: {
+      rawData: {
+        type: Object,
+        value: function() {
+          return null;
+        }
+      },
       dataType: {
         type: String,
         value: 'template'
@@ -101,6 +107,40 @@ Define how your data will come in using these methods:
       if (!e.target.classList.contains('menu-icon')) {
         this._hideActionMenu();
       }
+    },
+
+    ready: function() {
+      if (this.rawData) {
+        this.dataType === 'template' ?
+          this.set('dataSource', this._transformTemplateSource(this.rawData.nodes))
+          : this.set('dataSource', this.rawData);
+      } else {
+        this.set('dataSource', { name : 'Root'});
+      }
+    },
+
+    _transformTemplateSource: function(data) {
+      var dictionary = {};
+
+      data.forEach(function(n) {
+        n.children = [];
+        n.total = 0;
+        dictionary[n.name] = n;
+      });
+
+      data.forEach(function(n) {
+        if (n.parent) {
+          ++ dictionary[n.parent].total;
+          dictionary[n.parent].children.push(n);
+        }
+      });
+
+      return data[0];
+    },
+
+    _transformInstanceSource: function(data) {
+
+
     },
 
     _hideActionMenu: function() {
@@ -256,11 +296,8 @@ Define how your data will come in using these methods:
     },
 
     _onEditTemplate: function(e) {
-//      this.set('workingNode.data.name', e.detail.name);
-      this.set('workingNode.data', {
-        name: e.detail.name,
-        attributes: e.detail.attributes
-      });
+      this.set('workingNode.data.name', e.detail.name);
+      this.set('workingNode.data.attributes', e.detail.attributes);
       this._updateTree(this.workingNode);
     },
 

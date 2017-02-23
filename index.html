@@ -82,7 +82,7 @@
                     <button onclick="exportTemplate()" hidden$="{{item.hidden}}">Export {{item.dataType}}</button>
                     <button onclick="exportInstance()" hidden$="{{!item.hidden}}">Export {{item.dataType}}</button>
                     <px-asset-view id$="{{item.dataType}}"
-                                   data-source="{{item.dataSource}}"
+                                   raw-data="{{item.rawData}}"
                                    data-type="{{item.dataType}}">
                     </px-asset-view>
                   </div>
@@ -177,15 +177,34 @@
               {
                 hidden: false,
                 dataType: 'template',//'instance',
-                dataSource: {
-                  name: 'Company',
-                  total: 1,
-                  children: []
+                rawData: {
+                  "nodes": [
+                    {
+                      "name": "GE",
+                      "attributes": [
+                        "website"
+                      ]
+                    },
+                    {
+                      "name": "building",
+                      "attributes": [
+                        "address"
+                      ],
+                      "parent": "GE"
+                    },
+                    {
+                      "name": "parking",
+                      "attributes": [
+                        "type"
+                      ],
+                      "parent": "building"
+                    }
+                  ]
                 }
               },{
                 hidden: true,
                 dataType: 'instance',
-                dataSource: {
+                rawData: {
                   name: 'GE Building',
                   total: 1,
                   uri: '/buildings/1',
