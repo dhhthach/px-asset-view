@@ -4,11 +4,17 @@
 
   <style>
 
+    :host {
+      position: absolute;
+      width: 100%;
+    }
+
     .dialog {
       border: 1px solid gainsboro;
       box-shadow: 1px 1px black;
       background-color: white;
       width: 50%;
+      min-height: 173px;
       position: absolute;
       left: 0;
       top: 0;
@@ -16,12 +22,12 @@
     }
 
     #masker {
-      position: absolute;
+      /*position: absolute;
       top: 0;
       bottom: 0;
       left: 0;
       right: 0;
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: rgba(255, 255, 255, 0.9);*/
     }
 
     .header {
@@ -48,13 +54,13 @@
       flex: 1;
       min-width: 30%;
     }
-    .row:nth-of-type(even) {
+    .row:nth-of-type(odd) {
       background-color: #e2e8ed;
     }
 
     .list {
       position: absolute;
-      top: 2.3em;
+      top: 4.6em;
       left: 0;
       right: 0;
       bottom: 0;
@@ -62,7 +68,7 @@
     }
 
     .action-btn {
-      border-left: 1px solid white;
+      /*border-left: 1px solid white;*/
       padding: 0.5em;
       cursor: pointer;
     }
@@ -74,15 +80,14 @@
 
   </style>
   <template>
-
     <div id="masker">
       <div class="dialog">
         <div class="header">
           <div class="name float--left"><input type="text" style="font-weight: bold;color: white;" value="{{_clonedData.name::input}}"/></div>
-          <div class="action-btn close-btn float--right" on-click="_closeDialog">Close</div>
-          <div class="action-btn save-btn float--right" on-click="_saveChanges">Save</div>
-          <div class="action-btn add-btn float--right" on-click="_addAttribute">Add Attribute</div>
+          <div class="action-btn close-btn float--right" on-click="_closeDialog"><i class="fa fa-close" aria-hidden="true"></i></div>
+          <div class="action-btn save-btn float--right" on-click="_saveChanges"><i class="fa fa-check" aria-hidden="true"></i></div>
         </div>
+        <div style="padding: 0.5em;">Attributes <i on-click="_addAttribute" class="fa fa-plus" style="cursor: pointer; vertical-align: middle" aria-hidden="true"></i></div>
         <div class="list">
           <template is="dom-repeat" items="{{_clonedData.attributes}}">
             <div class="row">

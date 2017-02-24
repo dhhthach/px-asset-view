@@ -59,11 +59,12 @@ Define how your data will come in using these methods:
           <g transform$="[[_computeTransform(_margin)]]"></g>
         </svg>
       </div>
-      <div id="menu" on-blur="_hideActionMenu">
+      <div id="menu" style="z-index: 2">
         <div class="item" on-click="_editNode"><i class="fa fa-edit"></i> Edit</div>
         <div class="item" on-click="_createNode"><i class="fa fa-plus-square-o"></i> Create</div>
         <div class="item" on-click="_deleteNode"><i class="fa fa-minus-square-o"></i> Delete</div>
       </div>
+      <div id="masker"></div>
     </div>
   </template>
 </dom-module>
@@ -138,11 +139,6 @@ Define how your data will come in using these methods:
       return data[0];
     },
 
-    _transformInstanceSource: function(data) {
-
-
-    },
-
     _hideActionMenu: function() {
       this.$.menu.style.display = 'none';
     },
@@ -157,36 +153,44 @@ Define how your data will come in using these methods:
 
     },
 
-    _editNode: function() {
+    _editNode: function(e) {
+
+      this.$.masker.style.display = 'block';
 
       var viewer = document.createElement(this.dataType + '-viewer');
       viewer.nodeData = this.workingNode;
+      viewer.style.top = e.target.parentElement.style.top;
+      viewer.style.left = e.target.parentElement.style.left;
 
       Polymer.dom(this.$.container).appendChild(viewer);
-      this.$.container.scrollIntoView();
 
       viewer.addEventListener('save', (function(e) {
         this.dataType === 'template' ? this._onEditTemplate(e) : this._onEditInstance(e);
       }).bind(this));
 
       viewer.addEventListener('close', (function() {
+        this.$.masker.style.display = 'none';
         Polymer.dom(this.$.container).removeChild(viewer);
       }).bind(this));
 
     },
 
-    _createNode: function() {
+    _createNode: function(e) {
+
+      this.$.masker.style.display = 'block';
 
       var viewer = document.createElement(this.dataType + '-viewer');
+      viewer.style.top = e.target.parentElement.style.top;
+      viewer.style.left = e.target.parentElement.style.left;
 
       Polymer.dom(this.$.container).appendChild(viewer);
-      this.$.container.scrollIntoView();
 
       viewer.addEventListener('save', (function(e) {
         this.dataType === 'template' ? this._onCreateTemplate(e) : this._onCreateInstance(e);
       }).bind(this));
 
       viewer.addEventListener('close', (function() {
+        this.$.masker.style.display = 'none';
         Polymer.dom(this.$.container).removeChild(viewer);
       }).bind(this));
 
