@@ -120,6 +120,32 @@ Define how your data will come in using these methods:
       }
     },
 
+    /**
+     * TODO: fix this work around
+     * @param data
+     */
+    updateRawData: function(data) {
+
+      this.set('rawData', data);
+
+      if (this.rawData) {
+        this.dataType === 'template' ?
+          this.set('dataSource', this._transformTemplateSource(this.rawData.nodes))
+          : this.set('dataSource', this.rawData);
+      } else {
+        this.set('dataSource', { name : 'Root'});
+      }
+
+      this._hierarchyData = d3.hierarchy(this.dataSource, function(d) { return d.children; });
+      this._hierarchyData.currentPage = 0;
+      this._hierarchyData.x0 = 0;
+      this._hierarchyData.y0 = 0;
+
+
+      this._updateTree(this._hierarchyData);
+
+    },
+
     _transformTemplateSource: function(data) {
       var dictionary = {};
 
