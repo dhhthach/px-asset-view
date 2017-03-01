@@ -84,7 +84,8 @@ Define how your data will come in using these methods:
         type: Object,
         value: function() {
           return null;
-        }
+        },
+        observer: 'updateRawData'
       },
       dataType: {
         type: String,
@@ -111,6 +112,10 @@ Define how your data will come in using these methods:
     },
 
     ready: function() {
+      this._computedDataSource();
+    },
+
+    _computedDataSource: function() {
       if (this.rawData) {
         this.dataType === 'template' ?
           this.set('dataSource', this._transformTemplateSource(this.rawData.nodes))
@@ -124,26 +129,9 @@ Define how your data will come in using these methods:
      * TODO: fix this work around
      * @param data
      */
-    updateRawData: function(data) {
-
-      this.set('rawData', data);
-
-      if (this.rawData) {
-        this.dataType === 'template' ?
-          this.set('dataSource', this._transformTemplateSource(this.rawData.nodes))
-          : this.set('dataSource', this.rawData);
-      } else {
-        this.set('dataSource', { name : 'Root'});
-      }
-
-      this._hierarchyData = d3.hierarchy(this.dataSource, function(d) { return d.children; });
-      this._hierarchyData.currentPage = 0;
-      this._hierarchyData.x0 = 0;
-      this._hierarchyData.y0 = 0;
-
-
-      this._updateTree(this._hierarchyData);
-
+    updateRawData: function() {
+      this._computedDataSource();
+      this._initHierarchyData();
     },
 
     _transformTemplateSource: function(data) {

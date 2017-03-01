@@ -679,7 +679,10 @@
     },
 
     attached: function() {
+      this._initHierarchyData();
+    },
 
+    _initHierarchyData: function() {
       // init hierarchy data from raw data
       this._hierarchyData = d3.hierarchy(this.dataSource, function(d) { return d.children; });
       this._hierarchyData.currentPage = 0;
@@ -688,7 +691,6 @@
 
 
       this._updateTree(this._hierarchyData);
-
     },
 
     /**
