@@ -145,7 +145,7 @@ Define how your data will come in using these methods:
 
       data.forEach(function(n) {
         if (n.parent) {
-          ++ dictionary[n.parent].total;
+          ++ dictionary[n.parent[0]].total;
           dictionary[n.parent].children.push(n);
         }
       });
@@ -239,11 +239,16 @@ Define how your data will come in using these methods:
       if(this.dataType === 'template') {
         while (queue.length > 0) {
           n = queue.pop();
-          nodes.push({
+
+          var obj = {
             name : n.data.name,
-            attributes: n.data.attributes,
-            parent: n.data.parent
-          });
+            attributes: n.data.attributes
+          };
+
+          n.data.parent && (obj.parent = [n.data.parent]);
+
+          nodes.push(obj);
+
           children = n.children || n._children;
           if (children) {
             queue = queue.concat(children.map(function(e) {
@@ -330,7 +335,11 @@ Define how your data will come in using these methods:
         obj[p.key] = p.value;
       });
 
-      obj.parent = this.workingNode.parent.data.uri;
+      obj.parent = null;
+
+      if (this.workingNode.parent) {
+        obj.parent = this.workingNode.parent.data.uri;
+      }
 
       this.fire('px-asset-view-update', {nodes: [obj]});
 

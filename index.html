@@ -190,40 +190,21 @@
                       "attributes": [
                         "address"
                       ],
-                      "parent": "GE"
+                      "parent": ["GE"]
                     },
                     {
                       "name": "parking",
                       "attributes": [
                         "type"
                       ],
-                      "parent": "building"
+                      "parent": ["building"]
                     }
                   ]
                 }
               },{
                 hidden: true,
                 dataType: 'instance',
-                rawData: {
-                  name: 'GE Building',
-                  total: 1,
-                  uri: '/buildings/1',
-                  children: [{
-                    name: 'Floor 1',
-                    total: 1,
-                    uri: '/floors/1',
-                    children: [{
-                      name: 'Room 1',
-                      total: 1,
-                      uri: '/rooms/1',
-                      children: [{
-                        name: 'Sensor 1',
-                        uri: '/sensors/1',
-                        total: 0
-                      }]
-                    }]
-                  }]
-                }
+                rawData: null
               }
             ],
             indexPlusOne = function(num) {
