@@ -556,7 +556,7 @@
               .attr('class', 'pager').classed(this.is, true)
               .attr('transform', function (d) {
                 var pos = {
-                  x: d.children[d.children.length - 1].x + 40,
+                  x: d.children[d.children.length - 1].x + 60,
                   y: d.children[d.children.length - 1].y
                 };
                 return 'translate(' + pos.y + ',' + pos.x + ')';
@@ -617,7 +617,7 @@
 
       pagersUpdate.attr('transform', function(d) {
         var pos = {
-          x: d.children[d.children.length - 1].x + 40,
+          x: d.children[d.children.length - 1].x + 60,
           y: d.children[d.children.length - 1].y
         };
         return 'translate(' + pos.y + ',' + pos.x  + ')';
