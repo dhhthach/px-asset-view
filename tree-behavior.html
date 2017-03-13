@@ -157,6 +157,11 @@
       _autoGenId: {
         type: Number,
         value: 1
+      },
+      isEditable: {
+        type: Boolean,
+        value: false,
+        observer: '_isEditableChanged'
       }
     },
 
@@ -221,7 +226,7 @@
 
       // Assigns the x and y position for the nodes
       var nodes = treeData.descendants(),
-              links = treeData.descendants().slice(1);
+        links = treeData.descendants().slice(1);
 
       //distance between two level
       var calculatedWidth = 0;
@@ -233,25 +238,25 @@
       // NODES
 
       var nodesData = this._svg.selectAll('g.node')
-              .data(nodes, (function(d) {
-                return d.data[this.idField] || (d.data[this.idField] = ++ this._autoGenId);// Date().getTime());
-              }).bind(this));
+        .data(nodes, (function(d) {
+          return d.data[this.idField] || (d.data[this.idField] = ++ this._autoGenId);// Date().getTime());
+        }).bind(this));
 
       this._renderNodes(nodesData, source);
 
       // LINKS
 
       var link = this._svg.selectAll('path.link')
-              .data(links, (function(d) { return d.data[this.idField]; }).bind(this));
+        .data(links, (function(d) { return d.data[this.idField]; }).bind(this));
 
       this._renderLinks(link, source);
 
       // PAGERS: Is Rendered only for dynamical data (useStaticData: false)
       if (!this.useStaticData) {
         var pagersData = this._svg.selectAll('g.pager')
-                .data(this._findExpandingNodes(), (function (d) {
-                  return d.data[this.idField];
-                }).bind(this));
+          .data(this._findExpandingNodes(), (function (d) {
+            return d.data[this.idField];
+          }).bind(this));
 
         this._renderPagers(pagersData);
       }
@@ -391,24 +396,24 @@
     _renderNodes: function(nodesData, source) {
 
       var nodesEnter = nodesData.enter().append('g')
-              .attr('class', (function(d) {
-                return this._generateClass('node');
-              }).bind(this))
-              .attr('transform', function() {
-                return 'translate(' + source.y0 + ',' + source.x0 + ')';
-              });
+        .attr('class', (function(d) {
+          return this._generateClass('node');
+        }).bind(this))
+        .attr('transform', function() {
+          return 'translate(' + source.y0 + ',' + source.x0 + ')';
+        });
 
       // Add Circle for the nodes
       var circleGroup = nodesEnter.append('g')
-              .style('cursor', 'pointer')
-              .on('click', (function(d) {
-                this._handleClick.call(this, d, d3.event.target.parentElement, this._REQUEST_CHILDREN_TYPE.INIT);
-              }).bind(this));
+        .style('cursor', 'pointer')
+        .on('click', (function(d) {
+          this._handleClick.call(this, d, d3.event.target.parentElement, this._REQUEST_CHILDREN_TYPE.INIT);
+        }).bind(this));
 
       circleGroup.append('circle')
-              .attr('r', 1e-6)
-              .attr('class', 'node')
-              .classed(this.is, true);
+        .attr('r', 1e-6)
+        .attr('class', 'node')
+        .classed(this.is, true);
 
       /*circleGroup.append('text')
        .attr('dy', '.35em')
@@ -422,95 +427,102 @@
 
       // Add labels for the nodes
       var labelGroup = nodesEnter.append('text')
-              .attr('dy', function(d) {
-                return '1.75em';
-              })
-              .attr('x', function(d) {
-                return '-1em'; //d.parent ? 25 : -25;
-              })
-              .attr('text-anchor', function(d) {
-                return 'start'; //d.parent ? 'start' : 'end';
-              })
-              .attr('class', 'node-text').classed(this.is, true);
+        .attr('dy', function(d) {
+          return '1.75em';
+        })
+        .attr('x', function(d) {
+          return '-1em'; //d.parent ? 25 : -25;
+        })
+        .attr('text-anchor', function(d) {
+          return 'start'; //d.parent ? 'start' : 'end';
+        })
+        .attr('class', 'node-text').classed(this.is, true);
 
       // adding tooltip
       labelGroup.append('title').text((function(d){
-                return d.data[this.labelField] + ' (' + d.data[this.totalField] + ')'; }
+          return d.data[this.labelField] + ' (' + d.data[this.totalField] + ')'; }
       ).bind(this));
 
       labelGroup.append('tspan')
-              .attr('class', 'node-label').classed(this.is, true)
-              .attr('dx', '5')
-              .text((function(d){
-                var label = d.data[this.labelField] + d.data[this.totalField];
-                if ( label.length > 25 ) {
-                  return d.data[this.labelField].slice(0, 25 - d.data[this.totalField].toString().length) + '...';
-                } else {
-                  return d.data[this.labelField];
-                }
-              }).bind(this));
+        .attr('class', 'node-label').classed(this.is, true)
+        .attr('dx', '5')
+        .text((function(d){
+          var label = d.data[this.labelField] + d.data[this.totalField];
+          if ( label.length > 25 ) {
+            return d.data[this.labelField].slice(0, 25 - d.data[this.totalField].toString().length) + '...';
+          } else {
+            return d.data[this.labelField];
+          }
+        }).bind(this));
 
       labelGroup.append('tspan')
-       .attr('class', 'node-counter').classed(this.is, true)
-       .attr('dx', '5')
-       .text((function(d){
-       return d.parent ? '(' + d.data[this.totalField] + ')' : '';
-       }).bind(this));
+        .attr('class', 'node-counter').classed(this.is, true)
+        .attr('dx', '5')
+        .text((function(d){
+          return d.parent ? '(' + d.data[this.totalField] + ')' : '';
+        }).bind(this));
+
 
       labelGroup.append('tspan')
-              .attr('dx', '5')
-              .attr('class', 'menu-icon').classed(this.is, true)
-              .style('font-family', 'FontAwesome').style('cursor', 'pointer')
-              .text(function(d) {
-                var charCode = parseInt('f0d7', 16);
-                return String.fromCharCode(charCode);
-              })
-              .on('click', (function(d) {
-                this._showActionMenu.call(this, d, d3.event);
-              }).bind(this));
+        .attr('dx', '5')
+        .attr('class', 'menu-icon').classed(this.is, true).classed('hidden', (function() {
+        return !this.isEditable;
+      }).bind(this))
+        .style('font-family', 'FontAwesome').style('cursor', 'pointer')
+        .text(function (d) {
+          var charCode = parseInt('f0d7', 16);
+          return String.fromCharCode(charCode);
+        })
+        .on('click', (function (d) {
+          this._showActionMenu.call(this, d, d3.event);
+        }).bind(this));
+
 
       // UPDATE
       var nodesUpdate = nodesEnter.merge(nodesData);
 
       nodesUpdate.transition()
-              .duration(this._duration)
-              .attr('transform', function(d) {
-                return 'translate(' + d.y + ',' + d.x + ')';
-              })
-              .attr('class', (function(d) {
+        .duration(this._duration)
+        .attr('transform', function(d) {
+          return 'translate(' + d.y + ',' + d.x + ')';
+        })
+        .attr('class', (function(d) {
 //                return d.children ? this._generateClass('node node-visited') : this._generateClass('node');
-                return this._generateClass('node');
-              }).bind(this));
+          return this._generateClass('node');
+        }).bind(this));
 
-      nodesUpdate.select('circle.node')
-              .attr('r', 10);
+      nodesUpdate.select('circle.node').attr('r', 10);
 
       nodesUpdate.select('title')
-              .text((function(d){
-                        return d.data[this.labelField] + ' (' + d.data[this.totalField] + ')'; }
-              ).bind(this));
+        .text((function(d){
+            return d.data[this.labelField] + ' (' + d.data[this.totalField] + ')'; }
+        ).bind(this));
 
       nodesUpdate.select('.node-label')
-              .text((function(d){
-                var label = d.data[this.labelField] + d.data[this.totalField];
-                if ( label.length > 25 ) {
-                  return d.data[this.labelField].slice(0, 25 - d.data[this.totalField].toString().length) + '...';
-                } else {
-                  return d.data[this.labelField];
-                }
-              }).bind(this));
+        .text((function(d){
+          var label = d.data[this.labelField] + d.data[this.totalField];
+          if ( label.length > 25 ) {
+            return d.data[this.labelField].slice(0, 25 - d.data[this.totalField].toString().length) + '...';
+          } else {
+            return d.data[this.labelField];
+          }
+        }).bind(this));
 
       nodesUpdate.select('.node-counter')
-       .text((function(d){
-       return d.parent ? '(' + d.data[this.totalField] + ')' : '';
-       }).bind(this));
+        .text((function(d){
+          return d.parent ? '(' + d.data[this.totalField] + ')' : '';
+        }).bind(this));
+
+      nodesUpdate.select('.menu-icon').classed('hidden', (function() {
+        return !this.isEditable;
+      }).bind(this));
 
       nodesData.exit().transition()
-              .duration(this._duration)
-              .attr('transform', function(d) {
-                return 'translate(' + source.y + ',' + source.x + ')';
-              })
-              .remove();
+        .duration(this._duration)
+        .attr('transform', function(d) {
+          return 'translate(' + source.y + ',' + source.x + ')';
+        })
+        .remove();
 
     },
 
@@ -523,26 +535,26 @@
     _renderLinks: function(linksData, source) {
 
       var linksEnter = linksData.enter().insert('path', 'g')
-              .attr('class', 'link').classed(this.is, true)
-              .attr('d', (function() {
-                var o = {x: source.x0, y: source.y0};
-                return this._diagonal(o, o)
-              }).bind(this));
+        .attr('class', 'link').classed(this.is, true)
+        .attr('d', (function() {
+          var o = {x: source.x0, y: source.y0};
+          return this._diagonal(o, o)
+        }).bind(this));
 //              .attr("marker-end", "url(#end)");
 
       var linksUpdate = linksEnter.merge(linksData);
 
       linksUpdate.transition()
-              .duration(this._duration)
-              .attr('d', (function(d){ return this._diagonal(d, d.parent) }).bind(this));
+        .duration(this._duration)
+        .attr('d', (function(d){ return this._diagonal(d, d.parent) }).bind(this));
 
       linksData.exit().transition()
-              .duration(this._duration)
-              .attr('d', (function() {
-                var o = {x: source.x, y: source.y};
-                return this._diagonal(o, o)
-              }).bind(this))
-              .remove();
+        .duration(this._duration)
+        .attr('d', (function() {
+          var o = {x: source.x, y: source.y};
+          return this._diagonal(o, o)
+        }).bind(this))
+        .remove();
     },
 
     /**
@@ -553,65 +565,65 @@
     _renderPagers: function(pagersData) {
 
       var pagersEnter = pagersData.enter().insert('g', 'g')
-              .attr('class', 'pager').classed(this.is, true)
-              .attr('transform', function (d) {
-                var pos = {
-                  x: d.children[d.children.length - 1].x + 60,
-                  y: d.children[d.children.length - 1].y
-                };
-                return 'translate(' + pos.y + ',' + pos.x + ')';
-              });
+        .attr('class', 'pager').classed(this.is, true)
+        .attr('transform', function (d) {
+          var pos = {
+            x: d.children[d.children.length - 1].x + 60,
+            y: d.children[d.children.length - 1].y
+          };
+          return 'translate(' + pos.y + ',' + pos.x + ')';
+        });
 
       var pager = pagersEnter.append('text');
 
       // <
       pager.append('tspan')
-              .attr('class', (function(d) {
-                return this._isFirstPage(d.currentPage) ?
-                        this._generateClass('icon-left icon-disabled') : this._generateClass('icon icon-left')
-              }).bind(this))
-              .style('font-family', 'FontAwesome')
-              .text(function() {
-                var charCode = parseInt('f053', 16);
-                return String.fromCharCode(charCode);
-              })
-              .on('click', (function(d) {
-                this._handleClick.call(this, d, d3.event.target.parentElement, this._REQUEST_CHILDREN_TYPE.PREV);
-              }).bind(this));
+        .attr('class', (function(d) {
+          return this._isFirstPage(d.currentPage) ?
+            this._generateClass('icon-left icon-disabled') : this._generateClass('icon icon-left')
+        }).bind(this))
+        .style('font-family', 'FontAwesome')
+        .text(function() {
+          var charCode = parseInt('f053', 16);
+          return String.fromCharCode(charCode);
+        })
+        .on('click', (function(d) {
+          this._handleClick.call(this, d, d3.event.target.parentElement, this._REQUEST_CHILDREN_TYPE.PREV);
+        }).bind(this));
 
       // from - to
       pager.append('tspan')
-              .attr('dx', '5')
-              .attr('class', 'showing-part').classed(this.is, true)
-              .text((function(d) {
-                var from = (d.currentPage - 1) * this.itemsPerLevel + 1;
-                var to = from + d.children.length - 1;
-                return from + ' - ' + to;
-              }).bind(this));
+        .attr('dx', '5')
+        .attr('class', 'showing-part').classed(this.is, true)
+        .text((function(d) {
+          var from = (d.currentPage - 1) * this.itemsPerLevel + 1;
+          var to = from + d.children.length - 1;
+          return from + ' - ' + to;
+        }).bind(this));
 
       // of Total
       pager.append('tspan')
-              .attr('dx', '5')
-              .attr('class', 'total-part').classed(this.is, true)
-              .text((function(d) {
-                return 'of ' + d.data[this.totalField];
-              }).bind(this));
+        .attr('dx', '5')
+        .attr('class', 'total-part').classed(this.is, true)
+        .text((function(d) {
+          return 'of ' + d.data[this.totalField];
+        }).bind(this));
 
       // >
       pager.append('tspan')
-              .attr('dx', '5')
-              .attr('class', (function(d) {
-                return this._isFirstPage(d.currentPage) ?
-                        this._generateClass('icon-right icon-disabled') : this._generateClass('icon icon-right');
-              }).bind(this)).classed(this.is, true)
-              .style('font-family', 'FontAwesome')
-              .text(function() {
-                var charCode = parseInt('f054', 16);
-                return String.fromCharCode(charCode);
-              })
-              .on('click', (function(d) {
-                this._handleClick.call(this, d, d3.event.target.parentElement, this._REQUEST_CHILDREN_TYPE.NEXT);
-              }).bind(this));
+        .attr('dx', '5')
+        .attr('class', (function(d) {
+          return this._isFirstPage(d.currentPage) ?
+            this._generateClass('icon-right icon-disabled') : this._generateClass('icon icon-right');
+        }).bind(this)).classed(this.is, true)
+        .style('font-family', 'FontAwesome')
+        .text(function() {
+          var charCode = parseInt('f054', 16);
+          return String.fromCharCode(charCode);
+        })
+        .on('click', (function(d) {
+          this._handleClick.call(this, d, d3.event.target.parentElement, this._REQUEST_CHILDREN_TYPE.NEXT);
+        }).bind(this));
 
       var pagersUpdate = pagersEnter.merge(pagersData);
 
@@ -624,23 +636,23 @@
       });
 
       pagersUpdate.select('tspan.showing-part')
-              .text((function(d) {
-                var from = (d.currentPage - 1) * this.itemsPerLevel + 1;
-                var to = from + d.children.length - 1;
-                return from + ' - ' + to;
-              }).bind(this));
+        .text((function(d) {
+          var from = (d.currentPage - 1) * this.itemsPerLevel + 1;
+          var to = from + d.children.length - 1;
+          return from + ' - ' + to;
+        }).bind(this));
 
       pagersUpdate.select('tspan.icon-right')
-              .attr('class', (function(d) {
-                return this._isLastPage(d.currentPage, d.data[this.totalField]) ?
-                        this._generateClass('icon-right icon-disabled') : this._generateClass('icon icon-right');
-              }).bind(this));
+        .attr('class', (function(d) {
+          return this._isLastPage(d.currentPage, d.data[this.totalField]) ?
+            this._generateClass('icon-right icon-disabled') : this._generateClass('icon icon-right');
+        }).bind(this));
 
       pagersUpdate.select('tspan.icon-left')
-              .attr('class', (function(d) {
-                return this._isFirstPage(d.currentPage) ?
-                        this._generateClass('icon-left icon-disabled') : this._generateClass('icon icon-left');
-              }).bind(this));
+        .attr('class', (function(d) {
+          return this._isFirstPage(d.currentPage) ?
+            this._generateClass('icon-left icon-disabled') : this._generateClass('icon icon-left');
+        }).bind(this));
 
       pagersData.exit().remove();
 
@@ -756,6 +768,10 @@
       }
 
       return expandingNodes;
+    },
+
+    _isEditableChanged: function() {
+      this._hierarchyData && this._updateTree(this._hierarchyData);
     }
 
   };
