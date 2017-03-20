@@ -121,7 +121,7 @@ Define how your data will come in using these methods:
           this.set('dataSource', this._transformTemplateSource(this.rawData.nodes))
           : this.set('dataSource', this.rawData);
       } else {
-        this.set('dataSource', { name : 'Root'});
+        this.set('dataSource', { name : 'Root', total: 10});
       }
     },
 

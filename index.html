@@ -83,7 +83,8 @@
                     <button onclick="exportInstance()" hidden$="{{!item.hidden}}">Export {{item.dataType}}</button>
                     <px-asset-view id$="{{item.dataType}}"
                                    raw-data="{{item.rawData}}"
-                                   data-type="{{item.dataType}}">
+                                   data-type="{{item.dataType}}"
+                                   use-static-data="{{item.useStaticData}}">
                     </px-asset-view>
                   </div>
                 </div>
@@ -177,6 +178,7 @@
               {
                 hidden: false,
                 dataType: 'template',//'instance',
+                useStaticData: 'true',
                 rawData: {
                   "nodes": [
                     {
@@ -204,7 +206,8 @@
               },{
                 hidden: true,
                 dataType: 'instance',
-                rawData: null
+                rawData: null,
+                useStaticData: false
               }
             ],
             indexPlusOne = function(num) {
